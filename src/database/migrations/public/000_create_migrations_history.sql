@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS public.migration_history (
+    id SERIAL PRIMARY KEY,
+    schema_name VARCHAR(255) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    checksum VARCHAR(255) NOT NULL,
+    executed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
