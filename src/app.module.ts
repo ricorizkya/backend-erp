@@ -10,6 +10,7 @@ import { HashIdDecodeInterceptor } from './common/hashid/hashid-decode.intercept
 import { HashIdModule } from './common/hashid/hashid.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
+import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -33,7 +34,7 @@ import { CommonModule } from './common/common.module';
     AuthModule,
     ProductModule,
     InventoryModule,
-    // PurchaseOrderModule,
+    PurchaseOrderModule,
     // SalesOrderModule,
     // BomModule,
     // ProductionModule,

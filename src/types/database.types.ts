@@ -223,6 +223,7 @@ export interface TenantSchema {
   stock_summary: StockSummaryTable;
 
   // Purchase Order
+  document_counters: DocumentCountersTable;
   purchase_requests: PurchaseRequestsTable;
   purchase_request_items: PurchaseRequestItemsTable;
   rfqs: RfqsTable;
@@ -608,6 +609,14 @@ export interface VendorInvoicesTable {
 export interface VendorInvoiceReceiptsTable {
   invoice_id: number;
   gr_id: number;
+}
+
+export interface DocumentCountersTable {
+  doc_type: string;
+  year: number;
+  counter: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
 }
 
 // ================================================================
