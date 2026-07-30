@@ -10,7 +10,7 @@ import {
   SubmitRfqQuoteDto,
   PaginationDto,
 } from '../dto/purchase-order.dto';
-import { DocumentNumberService } from './document-number.service';
+import { DocumentNumberService } from '../../../common/document-number.service';
 
 @Injectable()
 export class RfqService {
