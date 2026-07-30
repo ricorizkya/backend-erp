@@ -1,8 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Kysely, sql } from 'kysely';
-import { TenantSchema } from '../../../types/database.types';
+import { TenantSchema } from '../types/database.types';
 
-export type DocType = 'PR' | 'RFQ' | 'PO' | 'GR' | 'VI' | 'APV';
+export type DocType =
+  | 'PR'
+  | 'RFQ'
+  | 'PO'
+  | 'GR'
+  | 'VI'
+  | 'APV'
+  | 'SQ'
+  | 'SO'
+  | 'DO'
+  | 'INV'
+  | 'PAY';
 
 @Injectable()
 export class DocumentNumberService {
