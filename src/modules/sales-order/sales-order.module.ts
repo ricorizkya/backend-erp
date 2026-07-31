@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CommonModule } from '../../common/common.module';
+import { ProductionModule } from '../production/production.module';
 import { SalesOrderController } from './sales-order.controller';
 import { SalesQuotationService } from './services/sales-quotation.service';
 import { SalesOrderService } from './services/sales-order.service';
@@ -10,7 +11,7 @@ import {
 } from './services/customer-invoice.service';
 
 @Module({
-  imports: [CommonModule],
+  imports: [CommonModule, ProductionModule],
   controllers: [SalesOrderController],
   providers: [
     SalesQuotationService,
