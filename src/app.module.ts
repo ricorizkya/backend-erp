@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { SalesOrderModule } from './modules/sales-order/sales-order.module';
+import { BomModule } from './modules/bom/bom.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -37,7 +38,7 @@ import { CommonModule } from './common/common.module';
     InventoryModule,
     PurchaseOrderModule,
     SalesOrderModule,
-    // BomModule,
+    BomModule,
     // ProductionModule,
     // QualityControlModule,
     // AccountingModule,
