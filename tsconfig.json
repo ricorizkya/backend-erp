@@ -22,5 +22,5 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "exclude": ["node_modules", "dist", "src-production-module", "src-quality-control"]
+  "exclude": ["node_modules", "dist", "src-production-module", "src-quality-control", "src-accounting"]
 }

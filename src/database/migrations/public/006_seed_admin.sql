@@ -42,7 +42,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.users (tenant_id, email, password_hash, full_name, is_active)
 SELECT t.id,
        'admin@synkro.com',
-       '$2b$12$FxzVTa0z/8MAly2pbNE.buqXyJuULvJKsiBK5nEvGGfQ5bg03Sl5m',
+       '$2b$12$BlN4uEIbPQdbcK5/tqEnY.OlFCJEjtjBumRD7TB5z2PtVZS.Vjycm',
        'Super Administrator',
        true
 FROM public.tenants t

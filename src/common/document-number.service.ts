@@ -15,7 +15,8 @@ export type DocType =
   | 'INV'
   | 'PAY'
   | 'WO'
-  | 'QC';
+  | 'QC'
+  | 'JE';
 
 @Injectable()
 export class DocumentNumberService {

@@ -10,8 +10,10 @@ import {
   PaymentReceiptService,
 } from './services/customer-invoice.service';
 
+import { AccountingModule } from '../accounting/accounting.module';
+
 @Module({
-  imports: [CommonModule, ProductionModule],
+  imports: [CommonModule, ProductionModule, AccountingModule],
   controllers: [SalesOrderController],
   providers: [
     SalesQuotationService,
