@@ -11,10 +11,14 @@ import {
   PaginationDto,
 } from '../dto/purchase-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
+import { ApService } from '../../accounting/services/ap.service';
 
 @Injectable()
 export class VendorInvoiceService {
-  constructor(private readonly docNumber: DocumentNumberService) {}
+  constructor(
+    private readonly docNumber: DocumentNumberService,
+    private readonly apService: ApService,
+  ) {}
 
   // ----------------------------------------------------------------
   // LIST
@@ -224,6 +228,16 @@ export class VendorInvoiceService {
           })),
         )
         .execute();
+
+      // Auto-create AP Transaction
+      await this.apService.createTransaction(
+        trx,
+        invoice.id,
+        po.supplier_id,
+        total,
+        new Date(dto.invoiceDate),
+        new Date(dto.dueDate),
+      );
 
       return this.findOne(trx, invoice.id);
     });

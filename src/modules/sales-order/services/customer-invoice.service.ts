@@ -12,10 +12,14 @@ import {
   PaginationDto,
 } from '../dto/sales-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
+import { ArService } from '../../accounting/services/ar.service';
 
 @Injectable()
 export class CustomerInvoiceService {
-  constructor(private readonly docNumber: DocumentNumberService) {}
+  constructor(
+    private readonly docNumber: DocumentNumberService,
+    private readonly arService: ArService,
+  ) {}
 
   // ----------------------------------------------------------------
   // LIST INVOICES
@@ -231,6 +235,16 @@ export class CustomerInvoiceService {
         .set({ status: 'invoiced', updated_at: new Date() })
         .where('id', '=', dto.soId)
         .execute();
+
+      // Auto-create AR Transaction
+      await this.arService.createTransaction(
+        trx,
+        invoice.id,
+        so.customer_id,
+        Number(so.total_amount),
+        new Date(dto.invoiceDate),
+        new Date(dto.dueDate),
+      );
 
       return this.findOneInvoice(trx, invoice.id);
     });

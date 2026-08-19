@@ -14,6 +14,8 @@ import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.mod
 import { SalesOrderModule } from './modules/sales-order/sales-order.module';
 import { BomModule } from './modules/bom/bom.module';
 import { ProductionModule } from './modules/production/production.module';
+import { QualityControlModule } from './modules/quality-control/quality-control.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -41,8 +43,8 @@ import { CommonModule } from './common/common.module';
     SalesOrderModule,
     BomModule,
     ProductionModule,
-    // QualityControlModule,
-    // AccountingModule,
+    QualityControlModule,
+    AccountingModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },
