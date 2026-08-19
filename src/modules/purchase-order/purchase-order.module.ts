@@ -7,8 +7,10 @@ import { PurchaseOrderService } from './services/purchase-order.service';
 import { GoodsReceiptService } from './services/goods-receipt.service';
 import { VendorInvoiceService } from './services/vendor-invoice.service';
 
+import { AccountingModule } from '../accounting/accounting.module';
+
 @Module({
-  imports: [CommonModule],
+  imports: [CommonModule, AccountingModule],
   controllers: [PurchaseOrderController],
   providers: [
     PurchaseRequestService,

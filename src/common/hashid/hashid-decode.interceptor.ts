@@ -56,6 +56,14 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
       }
     }
 
+    if (request.params && typeof request.params === 'object') {
+      try {
+        request.params = this.decodeObject(request.params, salt);
+      } catch (e: any) {
+        throw new BadRequestException(`Params decode error: ${e.message || e}`);
+      }
+    }
+
     return next.handle();
   }
 

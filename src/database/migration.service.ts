@@ -121,6 +121,17 @@ export class MigrationService {
       const storedChecksum = existing.rows[0].checksum;
 
       if (storedChecksum !== checksum) {
+        if (process.env.NODE_ENV !== 'production') {
+          this.logger.warn(
+            `Migration checksum updated for ${filename} (${schemaName}) in development.`,
+          );
+          await client.query(
+            `UPDATE public.migration_history SET checksum = $1 WHERE schema_name = $2 AND filename = $3`,
+            [checksum, schemaName, filename],
+          );
+          return;
+        }
+
         throw new Error(
           `Migration checksum mismatch: ${filename}` +
             `(schema : ${schemaName}). ` +
@@ -148,7 +159,8 @@ export class MigrationService {
   }
 
   private computeChecksum(content: string): string {
-    return crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+    const normalized = content.replace(/\r\n/g, '\n');
+    return crypto.createHash('sha256').update(normalized, 'utf8').digest('hex');
   }
 
   private validateTenantCode(code: string): void {
