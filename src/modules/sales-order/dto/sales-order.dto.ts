@@ -16,7 +16,8 @@ import { Type } from 'class-transformer';
 
 export class PaginationDto {
   @IsOptional() @IsInt() @Min(1) @Type(() => Number) page: number = 1;
-  @IsOptional() @IsInt() @Min(1) @Max(100) @Type(() => Number) limit: number = 20;
+  @IsOptional() @IsInt() @Min(1) @Max(100) @Type(() => Number) limit: number =
+    20;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsDateString() dateFrom?: string;
@@ -41,7 +42,9 @@ export class CreateSalesQuotationDto {
   @IsOptional() @IsString() deliveryAddress?: string;
   @IsOptional() @IsString() notes?: string;
   @IsOptional() @IsString() termsConditions?: string;
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CreateSqItemDto)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSqItemDto)
   items: CreateSqItemDto[];
 }
 
@@ -72,7 +75,9 @@ export class CreateSalesOrderDto {
   @IsOptional() @IsString() deliveryAddress?: string;
   @IsOptional() @IsString() notes?: string;
   @IsOptional() @IsString() termsConditions?: string;
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CreateSoItemDto)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSoItemDto)
   items: CreateSoItemDto[];
 }
 
@@ -96,7 +101,9 @@ export class CreateDeliveryOrderDto {
   @IsOptional() @IsString() @MaxLength(255) receiverName?: string;
   @IsOptional() @IsString() deliveryAddress?: string;
   @IsOptional() @IsString() notes?: string;
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CreateDoItemDto)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateDoItemDto)
   items: CreateDoItemDto[];
 }
 
@@ -127,6 +134,8 @@ export class CreatePaymentReceiptDto {
   @IsEnum(PaymentMethod) paymentMethod: PaymentMethod;
   @IsOptional() @IsString() @MaxLength(100) referenceNo?: string;
   @IsOptional() @IsString() notes?: string;
-  @IsArray() @ValidateNested({ each: true }) @Type(() => AllocatePaymentDto)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AllocatePaymentDto)
   allocations: AllocatePaymentDto[];
 }

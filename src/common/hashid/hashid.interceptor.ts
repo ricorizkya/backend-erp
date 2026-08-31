@@ -53,8 +53,6 @@ export class HashIdInterceptor implements NestInterceptor {
 
     return next
       .handle()
-      .pipe(
-        map((data) => this.hashIdService.encodeObject(data, salt)),
-      );
+      .pipe(map((data) => this.hashIdService.encodeObject(data, salt)));
   }
 }

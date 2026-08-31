@@ -315,10 +315,7 @@ export class GeneralLedgerService {
       .innerJoin('journal_entries as je', 'je.id', 'bt.journal_entry_id')
       .where('je.period_id', '=', periodId)
       .groupBy(['bt.transaction_type'])
-      .select([
-        'bt.transaction_type',
-        db.fn.sum<number>('amount').as('total'),
-      ])
+      .select(['bt.transaction_type', db.fn.sum<number>('amount').as('total')])
       .execute();
 
     const cashIn = cashMovements.find((m) => m.transaction_type === 'credit');

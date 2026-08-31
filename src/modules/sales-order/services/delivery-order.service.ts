@@ -9,12 +9,16 @@ import { TenantSchema } from '../../../types/database.types';
 import { CreateDeliveryOrderDto, PaginationDto } from '../dto/sales-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { SalesOrderService } from './sales-order.service';
+import { JournalEntryService } from '../../accounting/services/journal-entry.service';
+import { AccountService } from '../../accounting/services/account.service';
 
 @Injectable()
 export class DeliveryOrderService {
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly soService: SalesOrderService,
+    private readonly journalService: JournalEntryService,
+    private readonly accountService: AccountService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -45,8 +49,10 @@ export class DeliveryOrderService {
       ]);
 
     if (status) query = query.where('do_.status', '=', status as any);
-    if (dateFrom) query = query.where('do_.delivery_date', '>=', new Date(dateFrom));
-    if (dateTo) query = query.where('do_.delivery_date', '<=', new Date(dateTo));
+    if (dateFrom)
+      query = query.where('do_.delivery_date', '>=', new Date(dateFrom));
+    if (dateTo)
+      query = query.where('do_.delivery_date', '<=', new Date(dateTo));
     if (search) query = query.where('do_.number', 'ilike', `%${search}%`);
 
     const total = Number(
@@ -64,7 +70,10 @@ export class DeliveryOrderService {
       .offset((page - 1) * limit)
       .execute();
 
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // ----------------------------------------------------------------
@@ -151,7 +160,8 @@ export class DeliveryOrderService {
       );
     }
 
-    if (!dto.items.length) throw new BadRequestException('Minimal satu item diperlukan');
+    if (!dto.items.length)
+      throw new BadRequestException('Minimal satu item diperlukan');
 
     // Validasi setiap item
     await this.validateDoItems(db, dto.items, so.warehouse_id);
@@ -165,7 +175,9 @@ export class DeliveryOrderService {
           number,
           so_id: dto.soId,
           warehouse_id: so.warehouse_id,
-          delivery_date: dto.deliveryDate ? new Date(dto.deliveryDate) : new Date(),
+          delivery_date: dto.deliveryDate
+            ? new Date(dto.deliveryDate)
+            : new Date(),
           receiver_name: dto.receiverName ?? null,
           delivery_address: dto.deliveryAddress ?? null,
           status: 'draft',
@@ -202,11 +214,7 @@ export class DeliveryOrderService {
   //        + refresh available_stock
   // ----------------------------------------------------------------
 
-  async confirm(
-    db: Kysely<TenantSchema>,
-    doId: number,
-    confirmedBy: number,
-  ) {
+  async confirm(db: Kysely<TenantSchema>, doId: number, confirmedBy: number) {
     const do_ = await db
       .selectFrom('delivery_orders')
       .where('id', '=', doId)
@@ -228,7 +236,8 @@ export class DeliveryOrderService {
         .select('id')
         .executeTakeFirst();
 
-      if (!movType) throw new Error('Movement type SALES_DELIVERY tidak ditemukan');
+      if (!movType)
+        throw new Error('Movement type SALES_DELIVERY tidak ditemukan');
 
       // 2. Buat inventory movement header
       const [movement] = await trx
@@ -293,11 +302,62 @@ export class DeliveryOrderService {
         .execute();
 
       // 6. Refresh stock_summary dan available_stock
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(trx);
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(trx);
+      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
+        trx,
+      );
+      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
+        trx,
+      );
 
       // 7. Update SO delivered quantities + status
       await this.soService.updateDeliveredQuantity(trx, do_.so_id);
+
+      // 8. Auto-post Journal Entry (HPP vs Persediaan Barang Jadi)
+      const totalCost = doItems.reduce(
+        (sum, item) =>
+          sum + Number(item.unit_price) * Number(item.quantity_delivered),
+        0,
+      );
+
+      if (totalCost > 0) {
+        const cogsAccount = await this.accountService.getSystemAccount(
+          trx,
+          'cogs',
+        );
+        const inventoryAccount = await this.accountService.getSystemAccount(
+          trx,
+          'inventory_finished',
+        );
+
+        await this.journalService.autoPost(
+          trx,
+          {
+            entryDate: new Date().toISOString(),
+            entryType: 'sales' as any,
+            description: `Pengiriman Barang - DO #${doId}`,
+            folio: `DO-${doId}`,
+            referenceType: 'delivery_order',
+            referenceId: doId,
+            lines: [
+              {
+                accountId: cogsAccount.id,
+                lineNumber: 1,
+                debit: totalCost,
+                credit: 0,
+                description: `HPP DO #${doId}`,
+              },
+              {
+                accountId: inventoryAccount.id,
+                lineNumber: 2,
+                debit: 0,
+                credit: totalCost,
+                description: `Persediaan Barang Jadi DO #${doId}`,
+              },
+            ],
+          },
+          confirmedBy,
+        );
+      }
 
       return this.findOne(trx, doId);
     });
@@ -307,11 +367,7 @@ export class DeliveryOrderService {
   // CANCEL
   // ----------------------------------------------------------------
 
-  async cancel(
-    db: Kysely<TenantSchema>,
-    doId: number,
-    cancelledBy: number,
-  ) {
+  async cancel(db: Kysely<TenantSchema>, doId: number, cancelledBy: number) {
     const do_ = await db
       .selectFrom('delivery_orders')
       .where('id', '=', doId)

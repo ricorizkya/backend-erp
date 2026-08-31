@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from './database/database.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
@@ -24,6 +26,7 @@ import { CommonModule } from './common/common.module';
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
     }),
+    ScheduleModule.forRoot(),
     RedisModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
         type: 'single',
@@ -32,6 +35,34 @@ import { CommonModule } from './common/common.module';
       }),
       inject: [ConfigService],
       imports: [ConfigModule],
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        if (redisUrl) {
+          try {
+            const parsed = new URL(redisUrl);
+            return {
+              connection: {
+                host: parsed.hostname || 'localhost',
+                port: parseInt(parsed.port || '6379', 10),
+                password: parsed.password || undefined,
+                username: parsed.username || undefined,
+              },
+            };
+          } catch (e) {
+            // fallback
+          }
+        }
+        return {
+          connection: {
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+          },
+        };
+      },
     }),
     DatabaseModule,
     CommonModule,

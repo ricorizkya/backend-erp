@@ -86,17 +86,10 @@ export class QcMasterService {
   // QC CHECKLISTS
   // ================================================================
 
-  async findAllChecklists(
-    db: Kysely<TenantSchema>,
-    inspectionType?: string,
-  ) {
+  async findAllChecklists(db: Kysely<TenantSchema>, inspectionType?: string) {
     let query = db
       .selectFrom('qc_checklists as qc')
-      .leftJoin(
-        'product_categories as pc',
-        'pc.id',
-        'qc.product_category_id',
-      )
+      .leftJoin('product_categories as pc', 'pc.id', 'qc.product_category_id')
       .where('qc.is_active', '=', true)
       .select([
         'qc.id',
@@ -117,11 +110,7 @@ export class QcMasterService {
   async findOneChecklist(db: Kysely<TenantSchema>, checklistId: number) {
     const checklist = await db
       .selectFrom('qc_checklists as qc')
-      .leftJoin(
-        'product_categories as pc',
-        'pc.id',
-        'qc.product_category_id',
-      )
+      .leftJoin('product_categories as pc', 'pc.id', 'qc.product_category_id')
       .where('qc.id', '=', checklistId)
       .select([
         'qc.id',
@@ -226,10 +215,7 @@ export class QcMasterService {
       .execute();
   }
 
-  async createDefectType(
-    db: Kysely<TenantSchema>,
-    dto: CreateDefectTypeDto,
-  ) {
+  async createDefectType(db: Kysely<TenantSchema>, dto: CreateDefectTypeDto) {
     const existing = await db
       .selectFrom('qc_defect_types')
       .where('code', '=', dto.code)

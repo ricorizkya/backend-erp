@@ -19,9 +19,6 @@ import { AccountingModule } from '../accounting/accounting.module';
     GoodsReceiptService,
     VendorInvoiceService,
   ],
-  exports: [
-    PurchaseOrderService,
-    VendorInvoiceService,
-  ],
+  exports: [PurchaseOrderService, VendorInvoiceService],
 })
 export class PurchaseOrderModule {}

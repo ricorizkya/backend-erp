@@ -36,7 +36,8 @@ export class MrpDemandService {
       ]);
 
     if (status) query = query.where('md.status', '=', status as any);
-    if (demandType) query = query.where('md.demand_type', '=', demandType as any);
+    if (demandType)
+      query = query.where('md.demand_type', '=', demandType as any);
     if (neededDateFrom)
       query = query.where('md.needed_date', '>=', new Date(neededDateFrom));
     if (neededDateTo)

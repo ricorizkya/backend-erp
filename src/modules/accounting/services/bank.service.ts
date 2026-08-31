@@ -37,10 +37,7 @@ export class BankService {
       .execute();
   }
 
-  async createBankAccount(
-    db: Kysely<TenantSchema>,
-    dto: CreateBankAccountDto,
-  ) {
+  async createBankAccount(db: Kysely<TenantSchema>, dto: CreateBankAccountDto) {
     if (dto.accountNumber) {
       const existing = await db
         .selectFrom('bank_accounts')
@@ -139,10 +136,7 @@ export class BankService {
   // BANK RECONCILIATION
   // ================================================================
 
-  async findReconciliations(
-    db: Kysely<TenantSchema>,
-    bankAccountId: number,
-  ) {
+  async findReconciliations(db: Kysely<TenantSchema>, bankAccountId: number) {
     return db
       .selectFrom('bank_reconciliations as br')
       .innerJoin('accounting_periods as ap', 'ap.id', 'br.period_id')

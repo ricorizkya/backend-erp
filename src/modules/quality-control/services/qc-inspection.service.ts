@@ -130,11 +130,7 @@ export class QcInspectionService {
     // Inspection items (hasil per parameter)
     const items = await db
       .selectFrom('qc_inspection_items as qii')
-      .innerJoin(
-        'qc_checklist_items as qci',
-        'qci.id',
-        'qii.checklist_item_id',
-      )
+      .innerJoin('qc_checklist_items as qci', 'qci.id', 'qii.checklist_item_id')
       .innerJoin('qc_parameters as qp', 'qp.id', 'qii.parameter_id')
       .where('qii.inspection_id', '=', inspectionId)
       .select([
@@ -187,10 +183,7 @@ export class QcInspectionService {
     createdBy: number,
   ) {
     // Validasi source constraint
-    if (
-      dto.inspectionType === InspectionType.INCOMING &&
-      !dto.goodsReceiptId
-    ) {
+    if (dto.inspectionType === InspectionType.INCOMING && !dto.goodsReceiptId) {
       throw new BadRequestException(
         'Incoming QC harus memiliki Goods Receipt ID',
       );
@@ -213,9 +206,7 @@ export class QcInspectionService {
       .executeTakeFirst();
 
     if (!checklist)
-      throw new NotFoundException(
-        'Checklist tidak ditemukan atau tidak aktif',
-      );
+      throw new NotFoundException('Checklist tidak ditemukan atau tidak aktif');
 
     if (checklist.inspection_type !== dto.inspectionType) {
       throw new BadRequestException(
@@ -247,8 +238,7 @@ export class QcInspectionService {
         .select('id')
         .executeTakeFirst();
 
-      if (!pr)
-        throw new NotFoundException('Production Result tidak ditemukan');
+      if (!pr) throw new NotFoundException('Production Result tidak ditemukan');
     }
 
     return db.transaction().execute(async (trx) => {
@@ -325,6 +315,37 @@ export class QcInspectionService {
     return db.transaction().execute(async (trx) => {
       // Insert inspection items
       if (dto.items.length > 0) {
+        const paramIds = dto.items
+          .map((i) => i.parameterId)
+          .filter((id): id is number => typeof id === 'number');
+
+        const paramMap = new Map<
+          number,
+          {
+            id: number;
+            value_type: string;
+            min_value: number | null;
+            max_value: number | null;
+          }
+        >();
+
+        if (paramIds.length > 0) {
+          const params = await trx
+            .selectFrom('qc_parameters')
+            .where('id', 'in', paramIds)
+            .select(['id', 'value_type', 'min_value', 'max_value'])
+            .execute();
+
+          for (const p of params) {
+            paramMap.set(p.id, {
+              id: p.id,
+              value_type: p.value_type,
+              min_value: p.min_value !== null ? Number(p.min_value) : null,
+              max_value: p.max_value !== null ? Number(p.max_value) : null,
+            });
+          }
+        }
+
         await trx
           .insertInto('qc_inspection_items')
           .values(
@@ -332,8 +353,19 @@ export class QcInspectionService {
               let isWithinSpec: boolean | null = null;
               if (item.passFailValue !== undefined) {
                 isWithinSpec = item.passFailValue;
-              } else if (item.numericValue !== undefined) {
-                isWithinSpec = true;
+              } else if (item.numericValue !== undefined && item.parameterId) {
+                const param = paramMap.get(item.parameterId);
+                if (param) {
+                  const minOk =
+                    param.min_value === null ||
+                    item.numericValue >= param.min_value;
+                  const maxOk =
+                    param.max_value === null ||
+                    item.numericValue <= param.max_value;
+                  isWithinSpec = minOk && maxOk;
+                } else {
+                  isWithinSpec = true;
+                }
               }
 
               return {
