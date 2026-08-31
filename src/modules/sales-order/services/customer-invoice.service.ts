@@ -13,12 +13,16 @@ import {
 } from '../dto/sales-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { ArService } from '../../accounting/services/ar.service';
+import { JournalEntryService } from '../../accounting/services/journal-entry.service';
+import { AccountService } from '../../accounting/services/account.service';
 
 @Injectable()
 export class CustomerInvoiceService {
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly arService: ArService,
+    private readonly journalService: JournalEntryService,
+    private readonly accountService: AccountService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -26,7 +30,8 @@ export class CustomerInvoiceService {
   // ----------------------------------------------------------------
 
   async findAllInvoices(db: Kysely<TenantSchema>, filter: PaginationDto) {
-    const { page, limit, search, status, dateFrom, dateTo, customerId } = filter;
+    const { page, limit, search, status, dateFrom, dateTo, customerId } =
+      filter;
 
     let query = db
       .selectFrom('customer_invoices as ci')
@@ -50,7 +55,8 @@ export class CustomerInvoiceService {
 
     if (status) query = query.where('ci.status', '=', status as any);
     if (customerId) query = query.where('ci.customer_id', '=', customerId);
-    if (dateFrom) query = query.where('ci.invoice_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('ci.invoice_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('ci.invoice_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
@@ -76,7 +82,10 @@ export class CustomerInvoiceService {
       .offset((page - 1) * limit)
       .execute();
 
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // ----------------------------------------------------------------
@@ -246,6 +255,61 @@ export class CustomerInvoiceService {
         new Date(dto.dueDate),
       );
 
+      // Auto-post Journal Entry (Piutang Usaha vs Penjualan + PPN Keluaran)
+      const arAccount = await this.accountService.getSystemAccount(trx, 'ar');
+      const revenueAccount = await this.accountService.getSystemAccount(
+        trx,
+        'revenue',
+      );
+      const taxAmount = Number(so.tax_amount);
+      const subtotal = Number(so.subtotal);
+      const totalAmount = Number(so.total_amount);
+
+      const lines = [
+        {
+          accountId: arAccount.id,
+          lineNumber: 1,
+          debit: totalAmount,
+          credit: 0,
+          description: `Faktur Penjualan ${invoice.number}`,
+        },
+        {
+          accountId: revenueAccount.id,
+          lineNumber: 2,
+          debit: 0,
+          credit: subtotal,
+          description: `Penjualan ${invoice.number}`,
+        },
+      ];
+
+      if (taxAmount > 0) {
+        const ppnAccount = await this.accountService.getSystemAccount(
+          trx,
+          'ppn_output',
+        );
+        lines.push({
+          accountId: ppnAccount.id,
+          lineNumber: 3,
+          debit: 0,
+          credit: taxAmount,
+          description: `PPN Keluaran ${invoice.number}`,
+        });
+      }
+
+      await this.journalService.autoPost(
+        trx,
+        {
+          entryDate: new Date(dto.invoiceDate).toISOString(),
+          entryType: 'sales' as any,
+          description: `Faktur Penjualan - ${invoice.number}`,
+          folio: invoice.number,
+          referenceType: 'customer_invoice',
+          referenceId: invoice.id,
+          lines,
+        },
+        createdBy,
+      );
+
       return this.findOneInvoice(trx, invoice.id);
     });
   }
@@ -292,15 +356,15 @@ export class CustomerInvoiceService {
 
     const total = Number(invoice.total_amount);
     const newStatus =
-      paidAmount >= total
-        ? 'paid'
-        : paidAmount > 0
-          ? 'partial'
-          : 'unpaid';
+      paidAmount >= total ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid';
 
     await db
       .updateTable('customer_invoices')
-      .set({ paid_amount: paidAmount, status: newStatus, updated_at: new Date() })
+      .set({
+        paid_amount: paidAmount,
+        status: newStatus,
+        updated_at: new Date(),
+      })
       .where('id', '=', invoiceId)
       .execute();
   }
@@ -315,6 +379,8 @@ export class PaymentReceiptService {
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly invoiceService: CustomerInvoiceService,
+    private readonly journalService: JournalEntryService,
+    private readonly accountService: AccountService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -341,7 +407,8 @@ export class PaymentReceiptService {
       ]);
 
     if (customerId) query = query.where('pr.customer_id', '=', customerId);
-    if (dateFrom) query = query.where('pr.payment_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('pr.payment_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('pr.payment_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
@@ -368,7 +435,10 @@ export class PaymentReceiptService {
       .offset((page - 1) * limit)
       .execute();
 
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // ----------------------------------------------------------------
@@ -439,7 +509,6 @@ export class PaymentReceiptService {
     }
 
     // Validasi total alokasi = amount payment
-    const totalAllocated = dto.allocations.reduce((s, a) => s + a.amount, 0);
     const paymentAmount = dto.allocations.reduce((s, a) => s + a.amount, 0);
 
     // Validasi setiap invoice
@@ -475,7 +544,9 @@ export class PaymentReceiptService {
         .values({
           number,
           customer_id: dto.customerId,
-          payment_date: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
+          payment_date: dto.paymentDate
+            ? new Date(dto.paymentDate)
+            : new Date(),
           payment_method: dto.paymentMethod,
           reference_no: dto.referenceNo ?? null,
           amount: paymentAmount,
@@ -512,6 +583,45 @@ export class PaymentReceiptService {
           Number(totalPaid?.total ?? 0),
         );
       }
+
+      // Auto-post Journal Entry (Kas/Bank vs Piutang Usaha)
+      const cashAccount = await this.accountService.getSystemAccount(
+        trx,
+        'cash',
+      );
+      const arAccount = await this.accountService.getSystemAccount(trx, 'ar');
+
+      await this.journalService.autoPost(
+        trx,
+        {
+          entryDate: (dto.paymentDate
+            ? new Date(dto.paymentDate)
+            : new Date()
+          ).toISOString(),
+          entryType: 'payment' as any,
+          description: `Penerimaan Pembayaran - ${payment.number}`,
+          folio: payment.number,
+          referenceType: 'payment_receipt',
+          referenceId: payment.id,
+          lines: [
+            {
+              accountId: cashAccount.id,
+              lineNumber: 1,
+              debit: paymentAmount,
+              credit: 0,
+              description: `Penerimaan Kas/Bank ${payment.number}`,
+            },
+            {
+              accountId: arAccount.id,
+              lineNumber: 2,
+              debit: 0,
+              credit: paymentAmount,
+              description: `Pelunasan Piutang ${payment.number}`,
+            },
+          ],
+        },
+        createdBy,
+      );
 
       return this.findOne(trx, payment.id);
     });

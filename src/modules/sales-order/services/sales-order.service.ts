@@ -26,7 +26,8 @@ export class SalesOrderService {
   // ----------------------------------------------------------------
 
   async findAll(db: Kysely<TenantSchema>, filter: PaginationDto) {
-    const { page, limit, search, status, dateFrom, dateTo, customerId } = filter;
+    const { page, limit, search, status, dateFrom, dateTo, customerId } =
+      filter;
 
     let query = db
       .selectFrom('sales_orders as so')
@@ -49,7 +50,8 @@ export class SalesOrderService {
 
     if (status) query = query.where('so.status', '=', status as any);
     if (customerId) query = query.where('so.customer_id', '=', customerId);
-    if (dateFrom) query = query.where('so.order_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('so.order_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('so.order_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
@@ -75,7 +77,10 @@ export class SalesOrderService {
       .offset((page - 1) * limit)
       .execute();
 
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // ----------------------------------------------------------------
@@ -206,7 +211,8 @@ export class SalesOrderService {
       .executeTakeFirst();
 
     if (!warehouse) throw new NotFoundException('Gudang tidak ditemukan');
-    if (!dto.items.length) throw new BadRequestException('Minimal satu item diperlukan');
+    if (!dto.items.length)
+      throw new BadRequestException('Minimal satu item diperlukan');
 
     // Jika dari quotation, validasi quotation status
     if (dto.quotationId) {
@@ -239,13 +245,16 @@ export class SalesOrderService {
           quotation_id: dto.quotationId ?? null,
           warehouse_id: dto.warehouseId,
           order_date: new Date(),
-          requested_date: dto.requestedDate ? new Date(dto.requestedDate) : null,
+          requested_date: dto.requestedDate
+            ? new Date(dto.requestedDate)
+            : null,
           status: 'draft',
           subtotal: totals.subtotal,
           tax_amount: totals.taxAmount,
           discount_amount: totals.discountAmount,
           total_amount: totals.totalAmount,
-          payment_term_days: dto.paymentTermDays ?? Number(customer.payment_term),
+          payment_term_days:
+            dto.paymentTermDays ?? Number(customer.payment_term),
           delivery_address: dto.deliveryAddress ?? null,
           notes: dto.notes ?? null,
           terms_conditions: dto.termsConditions ?? null,
@@ -287,11 +296,7 @@ export class SalesOrderService {
   // karena view membaca SO status = 'confirmed'
   // ----------------------------------------------------------------
 
-  async confirm(
-    db: Kysely<TenantSchema>,
-    soId: number,
-    confirmedBy: number,
-  ) {
+  async confirm(db: Kysely<TenantSchema>, soId: number, confirmedBy: number) {
     const so = await this.getSoOrThrow(db, soId); // or getSoOrThrow(db, soId)
 
     if (so.status !== 'draft') {
@@ -346,7 +351,9 @@ export class SalesOrderService {
     }
 
     // Refresh available_stock agar soft reservation terupdate
-    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(db);
+    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
+      db,
+    );
 
     return updated;
   }
@@ -383,7 +390,9 @@ export class SalesOrderService {
       .execute();
 
     // Refresh available_stock — reservation dilepas otomatis
-    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(db);
+    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
+      db,
+    );
 
     return updated;
   }
@@ -402,7 +411,9 @@ export class SalesOrderService {
       .groupBy('doi.so_item_id')
       .select([
         'doi.so_item_id',
-        db.fn.sum<number>('doi.quantity_delivered' as any).as('total_delivered'),
+        db.fn
+          .sum<number>('doi.quantity_delivered' as any)
+          .as('total_delivered'),
       ])
       .execute();
 
@@ -437,9 +448,7 @@ export class SalesOrderService {
     const allDelivered = allItems.every(
       (i) => Number(i.quantity_delivered) >= Number(i.quantity),
     );
-    const anyDelivered = allItems.some(
-      (i) => Number(i.quantity_delivered) > 0,
-    );
+    const anyDelivered = allItems.some((i) => Number(i.quantity_delivered) > 0);
 
     const newStatus = allDelivered
       ? 'delivered'
@@ -488,8 +497,15 @@ export class SalesOrderService {
     };
   }
 
-  private calcLineSubtotal(qty: number, price: number, disc: number, tax: number) {
-    return Math.round(qty * price * (1 - disc / 100) * (1 + tax / 100) * 100) / 100;
+  private calcLineSubtotal(
+    qty: number,
+    price: number,
+    disc: number,
+    tax: number,
+  ) {
+    return (
+      Math.round(qty * price * (1 - disc / 100) * (1 + tax / 100) * 100) / 100
+    );
   }
 
   private async getSoOrThrow(db: Kysely<TenantSchema>, soId: number) {

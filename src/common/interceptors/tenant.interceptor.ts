@@ -50,10 +50,10 @@ export class TenantInterceptor implements NestInterceptor {
     const request = ctx.switchToHttp().getRequest();
 
     // Cek apakah route/controller di-skip dari tenant interceptor
-    const skipTenant = this.reflector.getAllAndOverride<boolean>(SKIP_TENANT_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const skipTenant = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TENANT_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
 
     if (skipTenant) {
       return next.handle();

@@ -77,7 +77,11 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
     if (typeof data === 'object' && data !== null) {
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
-        if (this.isIdField(key) && typeof value === 'string' && value.length >= 8) {
+        if (
+          this.isIdField(key) &&
+          typeof value === 'string' &&
+          value.length >= 8
+        ) {
           result[key] = this.hashIdService.decode(value, salt);
         } else if (typeof value === 'object') {
           result[key] = this.decodeObject(value, salt);

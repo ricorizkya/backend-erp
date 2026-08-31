@@ -168,7 +168,8 @@ export class ApService {
           )
       : await this.accountService.getSystemAccount(db, 'cash');
 
-    if (!cashAccount) throw new BadRequestException('Bank account tidak ditemukan');
+    if (!cashAccount)
+      throw new BadRequestException('Bank account tidak ditemukan');
 
     const period = await this.periodService.getActivePeriodForDate(
       db,
@@ -268,7 +269,12 @@ export class ApService {
             .updateTable('vendor_invoices')
             .set({
               paid_amount: paidAmount,
-              status: newStatus === 'paid' ? 'paid' : newStatus === 'partial' ? 'partial' : 'unpaid',
+              status:
+                newStatus === 'paid'
+                  ? 'paid'
+                  : newStatus === 'partial'
+                    ? 'partial'
+                    : 'unpaid',
               updated_at: new Date(),
             })
             .where('id', '=', apt.vendor_invoice_id)
