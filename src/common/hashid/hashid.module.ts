@@ -15,7 +15,17 @@ import { HashIdPipe } from './hashid.pipe';
  */
 @Global()
 @Module({
-  providers: [HashIdService, HashIdPipe, HashIdInterceptor, HashIdDecodeInterceptor],
-  exports: [HashIdService, HashIdPipe, HashIdInterceptor, HashIdDecodeInterceptor],
+  providers: [
+    HashIdService,
+    HashIdPipe,
+    HashIdInterceptor,
+    HashIdDecodeInterceptor,
+  ],
+  exports: [
+    HashIdService,
+    HashIdPipe,
+    HashIdInterceptor,
+    HashIdDecodeInterceptor,
+  ],
 })
 export class HashIdModule {}

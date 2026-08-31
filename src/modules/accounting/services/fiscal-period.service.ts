@@ -51,7 +51,9 @@ export class FiscalPeriodService {
     createdBy: number,
   ) {
     if (new Date(dto.startDate) >= new Date(dto.endDate)) {
-      throw new BadRequestException('Tanggal mulai harus sebelum tanggal akhir');
+      throw new BadRequestException(
+        'Tanggal mulai harus sebelum tanggal akhir',
+      );
     }
 
     const [year] = await db
@@ -139,7 +141,9 @@ export class FiscalPeriodService {
       .executeTakeFirst();
 
     if (!fiscalYear) {
-      throw new NotFoundException('Fiscal Year tidak ditemukan atau sudah ditutup');
+      throw new NotFoundException(
+        'Fiscal Year tidak ditemukan atau sudah ditutup',
+      );
     }
 
     // Cek period number unik dalam fiscal year
@@ -186,7 +190,9 @@ export class FiscalPeriodService {
     if (!period) throw new NotFoundException('Periode tidak ditemukan');
 
     if (period.status === 'locked') {
-      throw new ConflictException('Periode yang sudah locked tidak bisa diubah');
+      throw new ConflictException(
+        'Periode yang sudah locked tidak bisa diubah',
+      );
     }
 
     const validTransitions: Record<string, string[]> = {

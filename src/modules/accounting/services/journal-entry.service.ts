@@ -7,10 +7,7 @@ import {
 } from '@nestjs/common';
 import { Kysely } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
-import {
-  CreateJournalEntryDto,
-  JournalFilterDto,
-} from '../dto/accounting.dto';
+import { CreateJournalEntryDto, JournalFilterDto } from '../dto/accounting.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { FiscalPeriodService } from './fiscal-period.service';
 
@@ -61,7 +58,8 @@ export class JournalEntryService {
     if (periodId) query = query.where('je.period_id', '=', periodId);
     if (entryType) query = query.where('je.entry_type', '=', entryType as any);
     if (status) query = query.where('je.status', '=', status as any);
-    if (dateFrom) query = query.where('je.entry_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('je.entry_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('je.entry_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
@@ -162,7 +160,9 @@ export class JournalEntryService {
     createdBy: number,
   ) {
     if (!dto.lines.length) {
-      throw new BadRequestException('Journal entry harus memiliki minimal dua baris');
+      throw new BadRequestException(
+        'Journal entry harus memiliki minimal dua baris',
+      );
     }
 
     const totalDebit = dto.lines.reduce((s, l) => s + (l.debit ?? 0), 0);
@@ -249,11 +249,7 @@ export class JournalEntryService {
   // POST JOURNAL — update GL + account_balances
   // ----------------------------------------------------------------
 
-  async post(
-    db: Kysely<TenantSchema>,
-    journalId: number,
-    postedBy: number,
-  ) {
+  async post(db: Kysely<TenantSchema>, journalId: number, postedBy: number) {
     const journal = await db
       .selectFrom('journal_entries')
       .where('id', '=', journalId)
@@ -387,7 +383,9 @@ export class JournalEntryService {
     const journal = await this.findOne(db, journalId);
 
     if (journal.status !== 'posted') {
-      throw new ConflictException('Hanya journal yang sudah posted yang bisa di-reverse');
+      throw new ConflictException(
+        'Hanya journal yang sudah posted yang bisa di-reverse',
+      );
     }
     if (journal.reversed_by) {
       throw new ConflictException('Journal ini sudah pernah di-reverse');
@@ -449,10 +447,28 @@ export class JournalEntryService {
 
   async autoPost(
     db: Kysely<TenantSchema>,
-    dto: CreateJournalEntryDto,
+    dto: Omit<CreateJournalEntryDto, 'periodId'> & { periodId?: number },
     postedBy: number,
   ): Promise<number> {
-    const journal = await this.create(db, dto, postedBy);
+    let periodId = dto.periodId;
+    if (!periodId) {
+      const period = await this.periodService.getActivePeriodForDate(
+        db,
+        new Date(dto.entryDate),
+      );
+      periodId = period.id;
+    }
+
+    const payload: CreateJournalEntryDto = {
+      ...dto,
+      periodId,
+      lines: dto.lines.map((l, idx) => ({
+        ...l,
+        lineNumber: l.lineNumber ?? idx + 1,
+      })),
+    };
+
+    const journal = await this.create(db, payload, postedBy);
     await this.post(db, journal.id, postedBy);
     return journal.id;
   }

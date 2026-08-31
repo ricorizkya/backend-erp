@@ -63,7 +63,7 @@ export class DatabaseService {
         pool: {
           connect: async () => client,
           end: async () => {},
-        } as any,
+        },
       }),
     });
 

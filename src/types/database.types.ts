@@ -139,6 +139,7 @@ export interface ProductVariantsTable {
   cost_price: Generated<number>;
   sale_price: Generated<number>;
   min_stock: Generated<number>;
+  lead_time_days: Generated<number>;
   is_active: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
@@ -896,9 +897,15 @@ export interface MrpRunsTable {
   run_date: Generated<Date>;
   plan_from: Date;
   plan_to: Date;
-  status: Generated<'running' | 'completed' | 'failed'>;
+  status: Generated<
+    'pending' | 'running' | 'completed' | 'failed' | 'failed_permanent'
+  >;
   total_planned_production: Generated<number>;
   total_planned_purchase: Generated<number>;
+  retry_count: Generated<number>;
+  started_at: Date | null;
+  completed_at: Date | null;
+  job_schema_version: Generated<number>;
   error_message: string | null;
   duration_ms: string | null;
   triggered_by: number;

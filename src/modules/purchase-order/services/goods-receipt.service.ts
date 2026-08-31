@@ -6,15 +6,22 @@ import {
 } from '@nestjs/common';
 import { Kysely, sql } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
-import { CreateGoodsReceiptDto, PaginationDto } from '../dto/purchase-order.dto';
+import {
+  CreateGoodsReceiptDto,
+  PaginationDto,
+} from '../dto/purchase-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { PurchaseOrderService } from './purchase-order.service';
+import { JournalEntryService } from '../../accounting/services/journal-entry.service';
+import { AccountService } from '../../accounting/services/account.service';
 
 @Injectable()
 export class GoodsReceiptService {
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly poService: PurchaseOrderService,
+    private readonly journalService: JournalEntryService,
+    private readonly accountService: AccountService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -45,7 +52,8 @@ export class GoodsReceiptService {
       ]);
 
     if (status) query = query.where('gr.status', '=', status as any);
-    if (dateFrom) query = query.where('gr.receipt_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('gr.receipt_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('gr.receipt_date', '<=', new Date(dateTo));
     if (search) query = query.where('gr.number', 'ilike', `%${search}%`);
 
@@ -201,11 +209,7 @@ export class GoodsReceiptService {
   // Trigger: inventory movement PURCHASE_RECEIPT + update PO status
   // ----------------------------------------------------------------
 
-  async confirm(
-    db: Kysely<TenantSchema>,
-    grId: number,
-    confirmedBy: number,
-  ) {
+  async confirm(db: Kysely<TenantSchema>, grId: number, confirmedBy: number) {
     const gr = await db
       .selectFrom('goods_receipts')
       .where('id', '=', grId)
@@ -301,6 +305,50 @@ export class GoodsReceiptService {
       // 7. Update PO received quantities + status
       await this.poService.updateReceivedQuantity(trx, gr.po_id);
 
+      // 8. Auto-post Journal Entry (Persediaan Bahan Baku vs Hutang Usaha)
+      const totalAmount = grItems.reduce(
+        (sum, item) =>
+          sum + Number(item.unit_cost) * Number(item.quantity_received),
+        0,
+      );
+
+      if (totalAmount > 0) {
+        const inventoryAccount = await this.accountService.getSystemAccount(
+          trx,
+          'inventory_raw',
+        );
+        const apAccount = await this.accountService.getSystemAccount(trx, 'ap');
+
+        await this.journalService.autoPost(
+          trx,
+          {
+            entryDate: new Date().toISOString(),
+            entryType: 'purchase' as any,
+            description: `Penerimaan Barang - GR #${grId}`,
+            folio: `GR-${grId}`,
+            referenceType: 'goods_receipt',
+            referenceId: grId,
+            lines: [
+              {
+                accountId: inventoryAccount.id,
+                lineNumber: 1,
+                debit: totalAmount,
+                credit: 0,
+                description: `Persediaan Bahan Baku GR #${grId}`,
+              },
+              {
+                accountId: apAccount.id,
+                lineNumber: 2,
+                debit: 0,
+                credit: totalAmount,
+                description: `Hutang Usaha GR #${grId}`,
+              },
+            ],
+          },
+          confirmedBy,
+        );
+      }
+
       return this.findOne(trx, grId);
     });
   }
@@ -321,9 +369,7 @@ export class GoodsReceiptService {
         .executeTakeFirst();
 
       if (!poItem) {
-        throw new NotFoundException(
-          `PO item ${item.poItemId} tidak ditemukan`,
-        );
+        throw new NotFoundException(`PO item ${item.poItemId} tidak ditemukan`);
       }
 
       // Pastikan variant sesuai dengan PO item

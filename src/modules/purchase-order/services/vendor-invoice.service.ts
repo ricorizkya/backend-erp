@@ -49,7 +49,8 @@ export class VendorInvoiceService {
       ]);
 
     if (status) query = query.where('vi.status', '=', status as any);
-    if (dateFrom) query = query.where('vi.invoice_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('vi.invoice_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('vi.invoice_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
@@ -193,10 +194,21 @@ export class VendorInvoiceService {
     return db.transaction().execute(async (trx) => {
       const number = await this.docNumber.generate(trx, 'VI');
 
-      // Ambil total dari PO sebagai basis invoice
-      const total = Number(po.total_amount);
-      const subtotal = Math.round((total / 1.11) * 100) / 100; // asumsi PPN 11%
-      const taxAmount = total - subtotal;
+      // Hitung subtotal dan tax dari actual GR items yang di-link
+      const grItems = await trx
+        .selectFrom('goods_receipt_items as gri')
+        .innerJoin('purchase_order_items as poi', 'poi.id', 'gri.po_item_id')
+        .where('gri.gr_id', 'in', dto.grIds)
+        .select(['gri.quantity_received', 'poi.unit_price'])
+        .execute();
+
+      const subtotal = grItems.reduce(
+        (sum, item) =>
+          sum + Number(item.quantity_received) * Number(item.unit_price),
+        0,
+      );
+      const taxAmount = Math.round(subtotal * 0.11 * 100) / 100; // Standar PPN 11%
+      const total = subtotal + taxAmount;
 
       const [invoice] = await trx
         .insertInto('vendor_invoices')
@@ -265,11 +277,7 @@ export class VendorInvoiceService {
 
     const total = Number(invoice.total_amount);
     const newStatus =
-      paidAmount >= total
-        ? 'paid'
-        : paidAmount > 0
-          ? 'partial'
-          : 'unpaid';
+      paidAmount >= total ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid';
 
     await db
       .updateTable('vendor_invoices')
@@ -296,7 +304,9 @@ export class VendorInvoiceService {
     if (!invoice) throw new NotFoundException('Invoice tidak ditemukan');
 
     if (invoice.status === 'paid') {
-      throw new ConflictException('Invoice yang sudah lunas tidak bisa dibatalkan');
+      throw new ConflictException(
+        'Invoice yang sudah lunas tidak bisa dibatalkan',
+      );
     }
     if (Number(invoice.paid_amount) > 0) {
       throw new ConflictException(

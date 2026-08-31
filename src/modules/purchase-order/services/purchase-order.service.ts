@@ -339,11 +339,7 @@ export class PurchaseOrderService {
   // CONFIRM (draft → confirmed)
   // ----------------------------------------------------------------
 
-  async confirm(
-    db: Kysely<TenantSchema>,
-    poId: number,
-    confirmedBy: number,
-  ) {
+  async confirm(db: Kysely<TenantSchema>, poId: number, confirmedBy: number) {
     const po = await this.getPoOrThrow(db, poId);
 
     if (po.status !== 'draft') {
@@ -405,10 +401,7 @@ export class PurchaseOrderService {
   // Update quantity_received (dipanggil internal oleh GR service)
   // ----------------------------------------------------------------
 
-  async updateReceivedQuantity(
-    db: Kysely<TenantSchema>,
-    poId: number,
-  ) {
+  async updateReceivedQuantity(db: Kysely<TenantSchema>, poId: number) {
     // Hitung total received per PO item dari semua GR confirmed
     const received = await db
       .selectFrom('goods_receipt_items as gri')
@@ -454,9 +447,7 @@ export class PurchaseOrderService {
     const allReceived = allItems.every(
       (i) => Number(i.quantity_received) >= Number(i.quantity),
     );
-    const anyReceived = allItems.some(
-      (i) => Number(i.quantity_received) > 0,
-    );
+    const anyReceived = allItems.some((i) => Number(i.quantity_received) > 0);
 
     const newStatus = allReceived
       ? 'received'

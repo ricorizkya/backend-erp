@@ -16,6 +16,8 @@ import {
 } from '../dto/production.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { BomService } from '../../bom/services/bom.service';
+import { JournalEntryService } from '../../accounting/services/journal-entry.service';
+import { AccountService } from '../../accounting/services/account.service';
 
 @Injectable()
 export class WorkOrderService {
@@ -24,6 +26,8 @@ export class WorkOrderService {
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly bomService: BomService,
+    private readonly journalService: JournalEntryService,
+    private readonly accountService: AccountService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -231,10 +235,13 @@ export class WorkOrderService {
       .select('id')
       .executeTakeFirst();
 
-    if (!warehouse) throw new NotFoundException('Gudang output tidak ditemukan');
+    if (!warehouse)
+      throw new NotFoundException('Gudang output tidak ditemukan');
 
     if (new Date(dto.plannedStart) >= new Date(dto.plannedFinish)) {
-      throw new BadRequestException('Tanggal mulai harus sebelum tanggal selesai');
+      throw new BadRequestException(
+        'Tanggal mulai harus sebelum tanggal selesai',
+      );
     }
 
     return db.transaction().execute(async (trx) => {
@@ -308,11 +315,7 @@ export class WorkOrderService {
   // Auto-generate: WO materials dari BOM + WO operations dari BOM
   // ----------------------------------------------------------------
 
-  async confirm(
-    db: Kysely<TenantSchema>,
-    woId: number,
-    confirmedBy: number,
-  ) {
+  async confirm(db: Kysely<TenantSchema>, woId: number, confirmedBy: number) {
     const wo = await db
       .selectFrom('work_orders')
       .where('id', '=', woId)
@@ -662,8 +665,7 @@ export class WorkOrderService {
         .returningAll()
         .execute();
 
-      const newProduced =
-        Number(wo.quantity_produced) + dto.quantityProduced;
+      const newProduced = Number(wo.quantity_produced) + dto.quantityProduced;
       const newStatus =
         newProduced >= Number(wo.quantity_planned)
           ? 'completed'
@@ -690,6 +692,75 @@ export class WorkOrderService {
         trx,
       );
 
+      // Auto-post Journal Entry saat WO selesai (Persediaan Barang Jadi vs Biaya Bahan Baku)
+      if (newStatus === 'completed') {
+        const consumedMaterials = await trx
+          .selectFrom('work_order_materials as wom')
+          .innerJoin('product_variants as pv', 'pv.id', 'wom.variant_id')
+          .where('wom.work_order_id', '=', woId)
+          .where('wom.quantity_consumed', '>', 0)
+          .select(['wom.quantity_consumed', 'pv.cost_price'])
+          .execute();
+
+        let totalProductionCost = consumedMaterials.reduce(
+          (sum, m) =>
+            sum + Number(m.quantity_consumed) * Number(m.cost_price ?? 0),
+          0,
+        );
+
+        // Fallback jika belum ada cost_price di materials: gunakan cost_price variant output
+        if (totalProductionCost === 0) {
+          const outputVariant = await trx
+            .selectFrom('product_variants')
+            .where('id', '=', wo.variant_id)
+            .select(['cost_price'])
+            .executeTakeFirst();
+
+          totalProductionCost =
+            Number(outputVariant?.cost_price ?? 0) * dto.quantityProduced;
+        }
+
+        if (totalProductionCost > 0) {
+          const inventoryAccount = await this.accountService.getSystemAccount(
+            trx,
+            'inventory_finished',
+          );
+          const rawMaterialAccount = await this.accountService.getSystemAccount(
+            trx,
+            'raw_material_cost',
+          );
+
+          await this.journalService.autoPost(
+            trx,
+            {
+              entryDate: new Date().toISOString(),
+              entryType: 'production' as any,
+              description: `Hasil Produksi - WO #${woId}`,
+              folio: `WO-${woId}`,
+              referenceType: 'work_order',
+              referenceId: woId,
+              lines: [
+                {
+                  accountId: inventoryAccount.id,
+                  lineNumber: 1,
+                  debit: totalProductionCost,
+                  credit: 0,
+                  description: `Hasil Produksi Barang Jadi WO #${woId}`,
+                },
+                {
+                  accountId: rawMaterialAccount.id,
+                  lineNumber: 2,
+                  debit: 0,
+                  credit: totalProductionCost,
+                  description: `Biaya Bahan Baku WO #${woId}`,
+                },
+              ],
+            },
+            createdBy,
+          );
+        }
+      }
+
       return result;
     });
   }
@@ -698,11 +769,7 @@ export class WorkOrderService {
   // OPERATION TRACKING
   // ----------------------------------------------------------------
 
-  async startOperation(
-    db: Kysely<TenantSchema>,
-    opId: number,
-    userId: number,
-  ) {
+  async startOperation(db: Kysely<TenantSchema>, opId: number, userId: number) {
     const op = await db
       .selectFrom('work_order_operations')
       .where('id', '=', opId)

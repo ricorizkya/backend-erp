@@ -24,6 +24,8 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { MODULES, ACTIONS } from '../auth/auth.constants';
 import { WorkOrderService } from './services/work-order.service';
 import { MrpDemandService } from './services/mrp-demand.service';
+import { MrpRunService } from './services/mrp-run.service';
+import { PlannedOrderService } from './services/planned-order.service';
 import {
   CreateWorkOrderDto,
   UpdateWorkOrderDto,
@@ -33,6 +35,11 @@ import {
   CreateMrpDemandDto,
   MrpDemandFilterDto,
 } from './dto/production.dto';
+import {
+  TriggerMrpRunDto,
+  MrpRunFilterDto,
+  PlannedOrderFilterDto,
+} from './dto/mrp-run.dto';
 import { IsString, IsNotEmpty } from 'class-validator';
 
 class CancelWoDto {
@@ -49,6 +56,8 @@ export class ProductionController {
   constructor(
     private readonly woService: WorkOrderService,
     private readonly mrpDemandService: MrpDemandService,
+    private readonly mrpRunService: MrpRunService,
+    private readonly plannedOrderService: PlannedOrderService,
   ) {}
 
   // ================================================================
@@ -213,5 +222,101 @@ export class ProductionController {
     @Param('id', HashIdPipe) id: number,
   ) {
     return this.woService.completeOperation(db, id);
+  }
+
+  // ================================================================
+  // MRP RUNS
+  // ================================================================
+
+  @Get('mrp-runs')
+  @RequirePermission(MODULES.MRP, ACTIONS.READ)
+  findAllMrpRuns(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Query() filter: MrpRunFilterDto,
+  ) {
+    return this.mrpRunService.findAll(db, filter);
+  }
+
+  @Post('mrp-runs')
+  @RequirePermission(MODULES.MRP, ACTIONS.WRITE)
+  triggerMrpRun(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Body() dto: TriggerMrpRunDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.mrpRunService.triggerRun(db, dto, user.userId, user.tenantCode);
+  }
+
+  @Get('mrp-runs/:id')
+  @RequirePermission(MODULES.MRP, ACTIONS.READ)
+  findOneMrpRun(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+  ) {
+    return this.mrpRunService.findOne(db, id);
+  }
+
+  @Post('mrp-runs/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission(MODULES.MRP, ACTIONS.APPROVE)
+  cancelMrpRun(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+  ) {
+    return this.mrpRunService.cancel(db, id);
+  }
+
+  @Post('mrp-runs/:id/approve-all')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission(MODULES.MRP, ACTIONS.APPROVE)
+  bulkApprovePlannedOrders(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.plannedOrderService.bulkApprove(db, id, user.userId);
+  }
+
+  // ================================================================
+  // PLANNED ORDERS
+  // ================================================================
+
+  @Get('planned-orders')
+  @RequirePermission(MODULES.MRP, ACTIONS.READ)
+  findAllPlannedOrders(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Query() filter: PlannedOrderFilterDto,
+  ) {
+    return this.plannedOrderService.findAll(db, filter);
+  }
+
+  @Get('planned-orders/:id')
+  @RequirePermission(MODULES.MRP, ACTIONS.READ)
+  findOnePlannedOrder(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+  ) {
+    return this.plannedOrderService.findOne(db, id);
+  }
+
+  @Post('planned-orders/:id/approve')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission(MODULES.MRP, ACTIONS.APPROVE)
+  approvePlannedOrder(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.plannedOrderService.approve(db, id, user.userId);
+  }
+
+  @Post('planned-orders/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission(MODULES.MRP, ACTIONS.APPROVE)
+  cancelPlannedOrder(
+    @TenantDb() db: Kysely<TenantSchema>,
+    @Param('id', HashIdPipe) id: number,
+  ) {
+    return this.plannedOrderService.cancel(db, id);
   }
 }

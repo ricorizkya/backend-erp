@@ -146,11 +146,7 @@ export class RfqService {
   // CREATE
   // ----------------------------------------------------------------
 
-  async create(
-    db: Kysely<TenantSchema>,
-    dto: CreateRfqDto,
-    createdBy: number,
-  ) {
+  async create(db: Kysely<TenantSchema>, dto: CreateRfqDto, createdBy: number) {
     return db.transaction().execute(async (trx) => {
       const number = await this.docNumber.generate(trx, 'RFQ');
 
@@ -194,10 +190,7 @@ export class RfqService {
         .filter((m) => m.rfq_item_id && m.pr_item_id);
 
       if (mappings.length > 0) {
-        await trx
-          .insertInto('rfq_item_pr_items')
-          .values(mappings)
-          .execute();
+        await trx.insertInto('rfq_item_pr_items').values(mappings).execute();
       }
 
       return this.findOne(trx, rfq.id);
@@ -330,11 +323,7 @@ export class RfqService {
   // SELECT QUOTE (tandai quote terpilih, reject sisanya)
   // ----------------------------------------------------------------
 
-  async selectQuote(
-    db: Kysely<TenantSchema>,
-    rfqId: number,
-    quoteId: number,
-  ) {
+  async selectQuote(db: Kysely<TenantSchema>, rfqId: number, quoteId: number) {
     await this.getRfqOrThrow(db, rfqId);
 
     const quote = await db
@@ -347,7 +336,9 @@ export class RfqService {
     if (!quote) throw new NotFoundException('Quote tidak ditemukan');
 
     if (quote.status !== 'received') {
-      throw new ConflictException('Hanya quote berstatus received yang bisa dipilih');
+      throw new ConflictException(
+        'Hanya quote berstatus received yang bisa dipilih',
+      );
     }
 
     return db.transaction().execute(async (trx) => {

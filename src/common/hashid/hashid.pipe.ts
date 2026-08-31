@@ -43,7 +43,9 @@ export class HashIdPipe implements PipeTransform<string, number> {
       );
     }
 
-    const salt = this.request ? (this.request[HASH_SALT_KEY] as string | undefined) : undefined;
+    const salt = this.request
+      ? (this.request[HASH_SALT_KEY] as string | undefined)
+      : undefined;
 
     if (!salt) {
       throw new BadRequestException(

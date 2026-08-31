@@ -43,7 +43,8 @@ export class PurchaseRequestService {
       ]);
 
     if (status) query = query.where('pr.status', '=', status as any);
-    if (dateFrom) query = query.where('pr.request_date', '>=', new Date(dateFrom));
+    if (dateFrom)
+      query = query.where('pr.request_date', '>=', new Date(dateFrom));
     if (dateTo) query = query.where('pr.request_date', '<=', new Date(dateTo));
     if (search) query = query.where('pr.number', 'ilike', `%${search}%`);
 
@@ -181,11 +182,7 @@ export class PurchaseRequestService {
   // SUBMIT (draft → submitted)
   // ----------------------------------------------------------------
 
-  async submit(
-    db: Kysely<TenantSchema>,
-    prId: number,
-    submittedBy: number,
-  ) {
+  async submit(db: Kysely<TenantSchema>, prId: number, submittedBy: number) {
     const pr = await this.getPrOrThrow(db, prId);
 
     if (pr.status !== 'draft') {
