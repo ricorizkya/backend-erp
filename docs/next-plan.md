@@ -79,6 +79,9 @@ Verification update — 2026-10-26:
 - The tagged Go integration suite is runnable against an explicitly supplied
   test database and the worker README now reflects the current state.
 - A disposable clean clone installed dependencies and completed `npm run build`.
+- The development E2E exposed and fixed a cross-tenant BullMQ collision: job
+  IDs are now `mrp-${tenantCode}-run-${runId}` because run sequences are
+  schema-local.
 - Still pending: authenticated two-tenant business-flow smoke tests, a full
   NestJS↔Redis↔Go run against the rebuilt development database, and secret
   rotation/history rewrite.
