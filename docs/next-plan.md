@@ -72,4 +72,12 @@ The audit baseline below is historical. Since then:
 - Customer invoices are calculated from delivered DO quantities; COGS uses `product_variants.cost_price`.
 - Current verification: backend build/lint/unit/integration/concurrency pass; Go unit and race tests pass.
 
-Remaining rollout work: authenticated two-tenant business-flow smoke tests, tagged Go integration scenarios against the rebuilt database, Git history secret rewrite/rotation, and synchronization of the separate worker documentation.
+Verification update — 2026-10-26:
+
+- Added a real PostgreSQL integration suite for `MrpRunService` covering
+  parallel trigger conflict, Redis enqueue failure recovery, and cancellation.
+- The tagged Go integration suite is runnable against an explicitly supplied
+  test database and the worker README now reflects the current state.
+- Still pending: authenticated two-tenant business-flow smoke tests, a full
+  NestJS↔Redis↔Go run against the rebuilt development database, and secret
+  rotation/history rewrite.

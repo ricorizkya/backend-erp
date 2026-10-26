@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 import { Kysely } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import { TriggerMrpRunDto, MrpRunFilterDto } from '../dto/mrp-run.dto';
