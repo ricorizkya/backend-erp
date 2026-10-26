@@ -242,11 +242,7 @@ export class AuthService {
   // LOGOUT
   // ----------------------------------------------------------------
 
-  async logout(
-    userId: number,
-    jti: string,
-    accessToken: string,
-  ): Promise<void> {
+  async logout(userId: number, jti: string): Promise<void> {
     // 1. Blacklist access token sampai expired
     await this.redis.setex(
       REDIS_KEYS.blacklistedToken(jti),

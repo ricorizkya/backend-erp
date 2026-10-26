@@ -14,6 +14,7 @@ import { DocumentNumberService } from '../../../common/document-number.service';
 import { PurchaseOrderService } from './purchase-order.service';
 import { JournalEntryService } from '../../accounting/services/journal-entry.service';
 import { AccountService } from '../../accounting/services/account.service';
+import { JournalEntryType } from '../../accounting/dto/accounting.dto';
 
 @Injectable()
 export class GoodsReceiptService {
@@ -210,21 +211,36 @@ export class GoodsReceiptService {
   // ----------------------------------------------------------------
 
   async confirm(db: Kysely<TenantSchema>, grId: number, confirmedBy: number) {
-    const gr = await db
-      .selectFrom('goods_receipts')
-      .where('id', '=', grId)
-      .select(['id', 'status', 'po_id', 'warehouse_id'])
-      .executeTakeFirst();
-
-    if (!gr) throw new NotFoundException('Goods Receipt tidak ditemukan');
-
-    if (gr.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya GR berstatus draft yang bisa dikonfirmasi. Status: ${gr.status}`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const gr = await trx
+        .selectFrom('goods_receipts')
+        .where('id', '=', grId)
+        .select(['id', 'status', 'po_id', 'warehouse_id'])
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!gr) throw new NotFoundException('Goods Receipt tidak ditemukan');
+      if (gr.status !== 'draft') {
+        throw new ConflictException(
+          `Hanya GR berstatus draft yang bisa dikonfirmasi. Status: ${gr.status}`,
+        );
+      }
+
+      const purchaseOrder = await trx
+        .selectFrom('purchase_orders')
+        .where('id', '=', gr.po_id)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
+      if (
+        !purchaseOrder ||
+        !['confirmed', 'partial'].includes(purchaseOrder.status)
+      ) {
+        throw new ConflictException(
+          'Purchase Order tidak lagi dapat menerima barang',
+        );
+      }
+
       // 1. Ambil movement type PURCHASE_RECEIPT
       const movType = await trx
         .selectFrom('inventory_movement_types')
@@ -298,9 +314,7 @@ export class GoodsReceiptService {
         .execute();
 
       // 6. Refresh stock_summary
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
-        trx,
-      );
+      await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(trx);
 
       // 7. Update PO received quantities + status
       await this.poService.updateReceivedQuantity(trx, gr.po_id);
@@ -323,7 +337,7 @@ export class GoodsReceiptService {
           trx,
           {
             entryDate: new Date().toISOString(),
-            entryType: 'purchase' as any,
+            entryType: JournalEntryType.PURCHASE,
             description: `Penerimaan Barang - GR #${grId}`,
             folio: `GR-${grId}`,
             referenceType: 'goods_receipt',

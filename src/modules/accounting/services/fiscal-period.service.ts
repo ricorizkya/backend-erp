@@ -5,10 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Kysely } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateFiscalYearDto,
   CreateAccountingPeriodDto,
+  PeriodStatus,
   UpdatePeriodStatusDto,
 } from '../dto/accounting.dto';
 
@@ -72,39 +74,43 @@ export class FiscalPeriodService {
   }
 
   async closeFiscalYear(db: Kysely<TenantSchema>, yearId: number) {
-    const year = await db
-      .selectFrom('fiscal_years')
-      .where('id', '=', yearId)
-      .select(['id', 'status'])
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const year = await trx
+        .selectFrom('fiscal_years')
+        .where('id', '=', yearId)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!year) throw new NotFoundException('Fiscal Year tidak ditemukan');
-    if (year.status === 'closed') {
-      throw new ConflictException('Fiscal Year sudah ditutup');
-    }
+      if (!year) throw new NotFoundException('Fiscal Year tidak ditemukan');
+      if (year.status === 'closed') {
+        throw new ConflictException('Fiscal Year sudah ditutup');
+      }
 
-    // Semua periode harus sudah closed
-    const openPeriods = await db
-      .selectFrom('accounting_periods')
-      .where('fiscal_year_id', '=', yearId)
-      .where('status', '!=', 'closed')
-      .select('id')
-      .executeTakeFirst();
+      const openPeriods = await trx
+        .selectFrom('accounting_periods')
+        .where('fiscal_year_id', '=', yearId)
+        .where('status', '=', 'open')
+        .select('id')
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (openPeriods) {
-      throw new ConflictException(
-        'Semua periode akuntansi harus ditutup sebelum menutup fiscal year',
-      );
-    }
+      if (openPeriods) {
+        throw new ConflictException(
+          'Semua periode akuntansi harus ditutup sebelum menutup fiscal year',
+        );
+      }
 
-    const [updated] = await db
-      .updateTable('fiscal_years')
-      .set({ status: 'closed' })
-      .where('id', '=', yearId)
-      .returningAll()
-      .execute();
+      const [updated] = await trx
+        .updateTable('fiscal_years')
+        .set({ status: 'closed' })
+        .where('id', '=', yearId)
+        .where('status', '=', 'open')
+        .returningAll()
+        .execute();
 
-    return updated;
+      return updated;
+    });
   }
 
   // ================================================================
@@ -133,47 +139,82 @@ export class FiscalPeriodService {
   }
 
   async createPeriod(db: Kysely<TenantSchema>, dto: CreateAccountingPeriodDto) {
-    const fiscalYear = await db
-      .selectFrom('fiscal_years')
-      .where('id', '=', dto.fiscalYearId)
-      .where('status', '=', 'open')
-      .select('id')
-      .executeTakeFirst();
-
-    if (!fiscalYear) {
-      throw new NotFoundException(
-        'Fiscal Year tidak ditemukan atau sudah ditutup',
+    const startDate = new Date(dto.startDate);
+    const endDate = new Date(dto.endDate);
+    if (startDate >= endDate) {
+      throw new BadRequestException(
+        'Tanggal mulai periode harus sebelum tanggal akhir',
       );
     }
 
-    // Cek period number unik dalam fiscal year
-    const existing = await db
-      .selectFrom('accounting_periods')
-      .where('fiscal_year_id', '=', dto.fiscalYearId)
-      .where('period_number', '=', dto.periodNumber)
-      .select('id')
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const fiscalYear = await trx
+        .selectFrom('fiscal_years')
+        .where('id', '=', dto.fiscalYearId)
+        .where('status', '=', 'open')
+        .select(['id', 'start_date', 'end_date'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (existing) {
-      throw new ConflictException(
-        `Period ${dto.periodNumber} sudah ada di fiscal year ini`,
-      );
-    }
+      if (!fiscalYear) {
+        throw new NotFoundException(
+          'Fiscal Year tidak ditemukan atau sudah ditutup',
+        );
+      }
+      if (
+        startDate < new Date(fiscalYear.start_date) ||
+        endDate > new Date(fiscalYear.end_date)
+      ) {
+        throw new BadRequestException(
+          'Rentang periode harus berada di dalam rentang fiscal year',
+        );
+      }
 
-    const [period] = await db
-      .insertInto('accounting_periods')
-      .values({
-        fiscal_year_id: dto.fiscalYearId,
-        name: dto.name,
-        period_number: dto.periodNumber,
-        start_date: new Date(dto.startDate),
-        end_date: new Date(dto.endDate),
-        status: 'open',
-      })
-      .returningAll()
-      .execute();
+      const existingNumber = await trx
+        .selectFrom('accounting_periods')
+        .where('fiscal_year_id', '=', dto.fiscalYearId)
+        .where('period_number', '=', dto.periodNumber)
+        .select('id')
+        .executeTakeFirst();
+      if (existingNumber) {
+        throw new ConflictException(
+          `Period ${dto.periodNumber} sudah ada di fiscal year ini`,
+        );
+      }
 
-    return period;
+      const existing = await trx
+        .selectFrom('accounting_periods')
+        .where('fiscal_year_id', '=', dto.fiscalYearId)
+        .where((eb) =>
+          eb.and([
+            eb('start_date', '<', endDate),
+            eb('end_date', '>', startDate),
+          ]),
+        )
+        .select('id')
+        .executeTakeFirst();
+
+      if (existing) {
+        throw new ConflictException(
+          'Rentang periode bertabrakan dengan periode yang sudah ada',
+        );
+      }
+
+      const [period] = await trx
+        .insertInto('accounting_periods')
+        .values({
+          fiscal_year_id: dto.fiscalYearId,
+          name: dto.name,
+          period_number: dto.periodNumber,
+          start_date: startDate,
+          end_date: endDate,
+          status: 'open',
+        })
+        .returningAll()
+        .execute();
+
+      return period;
+    });
   }
 
   async updatePeriodStatus(
@@ -181,50 +222,81 @@ export class FiscalPeriodService {
     periodId: number,
     dto: UpdatePeriodStatusDto,
   ) {
-    const period = await db
-      .selectFrom('accounting_periods')
-      .where('id', '=', periodId)
-      .select(['id', 'status'])
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const period = await trx
+        .selectFrom('accounting_periods')
+        .where('id', '=', periodId)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!period) throw new NotFoundException('Periode tidak ditemukan');
+      if (!period) throw new NotFoundException('Periode tidak ditemukan');
 
-    if (period.status === 'locked') {
-      throw new ConflictException(
-        'Periode yang sudah locked tidak bisa diubah',
-      );
-    }
+      if (period.status === 'locked') {
+        throw new ConflictException(
+          'Periode yang sudah locked tidak bisa diubah',
+        );
+      }
 
-    const validTransitions: Record<string, string[]> = {
-      open: ['closed', 'locked'],
-      closed: ['locked'],
-    };
+      const validTransitions: Record<string, string[]> = {
+        open: ['closed', 'locked'],
+        closed: ['locked'],
+      };
 
-    const allowed = validTransitions[period.status] ?? [];
-    if (!allowed.includes(dto.status)) {
-      throw new BadRequestException(
-        `Tidak bisa mengubah status dari "${period.status}" ke "${dto.status}"`,
-      );
-    }
+      const allowed = validTransitions[period.status] ?? [];
+      if (!allowed.includes(dto.status)) {
+        throw new BadRequestException(
+          `Tidak bisa mengubah status dari "${period.status}" ke "${dto.status}"`,
+        );
+      }
 
-    const [updated] = await db
-      .updateTable('accounting_periods')
-      .set({ status: dto.status })
-      .where('id', '=', periodId)
-      .returningAll()
-      .execute();
+      if (
+        dto.status === PeriodStatus.CLOSED ||
+        dto.status === PeriodStatus.LOCKED
+      ) {
+        const draft = await trx
+          .selectFrom('journal_entries')
+          .where('period_id', '=', periodId)
+          .where('status', '=', 'draft')
+          .select('id')
+          .executeTakeFirst();
+        if (draft) {
+          throw new ConflictException(
+            'Periode tidak bisa ditutup karena masih memiliki journal draft',
+          );
+        }
+      }
 
-    return updated;
+      const [updated] = await trx
+        .updateTable('accounting_periods')
+        .set({ status: dto.status })
+        .where('id', '=', periodId)
+        .where('status', '=', period.status)
+        .returningAll()
+        .execute();
+
+      return updated;
+    });
   }
 
   // Helper: ambil periode aktif (open) untuk tanggal tertentu
   async getActivePeriodForDate(db: Kysely<TenantSchema>, date: Date) {
     const period = await db
       .selectFrom('accounting_periods')
-      .where('start_date', '<=', date)
-      .where('end_date', '>=', date)
-      .where('status', '=', 'open')
-      .select(['id', 'name', 'period_number'])
+      .innerJoin(
+        'fiscal_years',
+        'fiscal_years.id',
+        'accounting_periods.fiscal_year_id',
+      )
+      .where('accounting_periods.start_date', '<=', date)
+      .where('accounting_periods.end_date', '>=', date)
+      .where('accounting_periods.status', '=', 'open')
+      .where('fiscal_years.status', '=', 'open')
+      .select([
+        'accounting_periods.id',
+        'accounting_periods.name',
+        'accounting_periods.period_number',
+      ])
       .executeTakeFirst();
 
     if (!period) {

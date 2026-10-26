@@ -4,7 +4,8 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely, sql } from 'kysely';
+import { Kysely, sql, type ReferenceExpression } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateSalesOrderDto,
@@ -297,65 +298,68 @@ export class SalesOrderService {
   // ----------------------------------------------------------------
 
   async confirm(db: Kysely<TenantSchema>, soId: number, confirmedBy: number) {
-    const so = await this.getSoOrThrow(db, soId); // or getSoOrThrow(db, soId)
+    return executeInTransaction(db, async (trx) => {
+      const so = await trx
+        .selectFrom('sales_orders')
+        .where('id', '=', soId)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (so.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya SO berstatus draft yang bisa dikonfirmasi. Status: ${so.status}`,
-      );
-    }
+      if (!so) throw new NotFoundException('Sales Order tidak ditemukan');
+      if (so.status !== 'draft') {
+        throw new ConflictException(
+          `Hanya SO berstatus draft yang bisa dikonfirmasi. Status: ${so.status}`,
+        );
+      }
 
-    const [updated] = await db
-      .updateTable('sales_orders')
-      .set({
-        status: 'confirmed',
-        confirmed_by: confirmedBy,
-        confirmed_at: new Date(),
-        updated_at: new Date(),
-      })
-      .where('id', '=', soId)
-      .returningAll()
-      .execute();
+      const [updated] = await trx
+        .updateTable('sales_orders')
+        .set({
+          status: 'confirmed',
+          confirmed_by: confirmedBy,
+          confirmed_at: new Date(),
+          updated_at: new Date(),
+        })
+        .where('id', '=', soId)
+        .returningAll()
+        .execute();
 
-    // Buat MRP Demand untuk item yang can_be_manufactured (MTO)
-    const items = await db
-      .selectFrom('sales_order_items as soi')
-      .innerJoin('product_variants as pv', 'pv.id', 'soi.variant_id')
-      .innerJoin('products as p', 'p.id', 'pv.product_id')
-      .where('soi.so_id', '=', soId)
-      .where('p.can_be_manufactured', '=', true)
-      .select([
-        'soi.id as so_item_id',
-        'soi.variant_id',
-        'soi.quantity',
-        'soi.uom_id',
-      ])
-      .execute();
+      const items = await trx
+        .selectFrom('sales_order_items as soi')
+        .innerJoin('product_variants as pv', 'pv.id', 'soi.variant_id')
+        .innerJoin('products as p', 'p.id', 'pv.product_id')
+        .where('soi.so_id', '=', soId)
+        .where('p.can_be_manufactured', '=', true)
+        .select([
+          'soi.id as so_item_id',
+          'soi.variant_id',
+          'soi.quantity',
+          'soi.uom_id',
+        ])
+        .execute();
 
-    const neededDate = updated.requested_date
-      ? new Date(updated.requested_date)
-      : new Date();
+      const neededDate = updated.requested_date
+        ? new Date(updated.requested_date)
+        : new Date();
 
-    for (const item of items) {
-      await this.mrpDemandService.createFromSalesOrder(
-        db,
-        soId,
-        item.so_item_id,
-        item.variant_id,
-        Number(item.quantity),
-        item.uom_id,
-        neededDate,
-        updated.warehouse_id,
-        confirmedBy,
-      );
-    }
+      for (const item of items) {
+        await this.mrpDemandService.createFromSalesOrder(
+          trx,
+          soId,
+          item.so_item_id,
+          item.variant_id,
+          Number(item.quantity),
+          item.uom_id,
+          neededDate,
+          updated.warehouse_id,
+          confirmedBy,
+        );
+      }
 
-    // Refresh available_stock agar soft reservation terupdate
-    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
-      db,
-    );
-
-    return updated;
+      await sql`REFRESH MATERIALIZED VIEW available_stock`.execute(trx);
+      return updated;
+    });
   }
 
   // ----------------------------------------------------------------
@@ -368,33 +372,31 @@ export class SalesOrderService {
     cancelledBy: number,
     dto: CancelSoDto,
   ) {
-    const so = await this.getSoOrThrow(db, soId);
+    return executeInTransaction(db, async (trx) => {
+      const [updated] = await trx
+        .updateTable('sales_orders')
+        .set({
+          status: 'cancelled',
+          cancelled_by: cancelledBy,
+          cancelled_at: new Date(),
+          cancellation_notes: dto.cancellationNotes,
+          updated_at: new Date(),
+        })
+        .where('id', '=', soId)
+        .where('status', 'not in', ['delivered', 'invoiced', 'cancelled'])
+        .returningAll()
+        .execute();
 
-    if (['delivered', 'invoiced'].includes(so.status)) {
-      throw new ConflictException(
-        `SO berstatus ${so.status} tidak bisa dibatalkan`,
-      );
-    }
+      if (!updated) {
+        const current = await this.getSoOrThrow(trx, soId);
+        throw new ConflictException(
+          `SO berstatus ${current.status} tidak bisa dibatalkan`,
+        );
+      }
 
-    const [updated] = await db
-      .updateTable('sales_orders')
-      .set({
-        status: 'cancelled',
-        cancelled_by: cancelledBy,
-        cancelled_at: new Date(),
-        cancellation_notes: dto.cancellationNotes,
-        updated_at: new Date(),
-      })
-      .where('id', '=', soId)
-      .returningAll()
-      .execute();
-
-    // Refresh available_stock — reservation dilepas otomatis
-    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
-      db,
-    );
-
-    return updated;
+      await sql`REFRESH MATERIALIZED VIEW available_stock`.execute(trx);
+      return updated;
+    });
   }
 
   // ----------------------------------------------------------------
@@ -412,7 +414,12 @@ export class SalesOrderService {
       .select([
         'doi.so_item_id',
         db.fn
-          .sum<number>('doi.quantity_delivered' as any)
+          .sum<number>(
+            'doi.quantity_delivered' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
           .as('total_delivered'),
       ])
       .execute();

@@ -197,46 +197,48 @@ export class BankService {
     reconId: number,
     userId: number,
   ) {
-    const recon = await db
-      .selectFrom('bank_reconciliations')
-      .where('id', '=', reconId)
-      .select(['id', 'status', 'difference'])
-      .executeTakeFirst();
+    return db.transaction().execute(async (trx) => {
+      const recon = await trx
+        .selectFrom('bank_reconciliations')
+        .where('id', '=', reconId)
+        .select(['id', 'status', 'difference'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!recon) throw new NotFoundException('Rekonsiliasi tidak ditemukan');
-    if (recon.status !== 'draft') {
-      throw new ConflictException('Rekonsiliasi sudah selesai');
-    }
+      if (!recon) throw new NotFoundException('Rekonsiliasi tidak ditemukan');
+      if (recon.status !== 'draft') {
+        throw new ConflictException('Rekonsiliasi sudah selesai');
+      }
+      if (Math.abs(Number(recon.difference ?? 0)) > 0.01) {
+        throw new ConflictException(
+          `Rekonsiliasi tidak bisa diselesaikan karena ada selisih: ${recon.difference}. Pastikan semua transaksi sudah dicocokkan.`,
+        );
+      }
 
-    if (Math.abs(Number(recon.difference ?? 0)) > 0.01) {
-      throw new ConflictException(
-        `Rekonsiliasi tidak bisa diselesaikan karena ada selisih: ${recon.difference}. Pastikan semua transaksi sudah dicocokkan.`,
-      );
-    }
+      const [updated] = await trx
+        .updateTable('bank_reconciliations')
+        .set({
+          status: 'completed',
+          completed_by: userId,
+          completed_at: new Date(),
+        })
+        .where('id', '=', reconId)
+        .returningAll()
+        .execute();
 
-    const [updated] = await db
-      .updateTable('bank_reconciliations')
-      .set({
-        status: 'completed',
-        completed_by: userId,
-        completed_at: new Date(),
-      })
-      .where('id', '=', reconId)
-      .returningAll()
-      .execute();
+      await trx
+        .updateTable('bank_transactions')
+        .set({
+          is_reconciled: true,
+          reconciled_at: new Date(),
+          reconciled_by: userId,
+        })
+        .where('bank_account_id', '=', updated.bank_account_id)
+        .where('is_reconciled', '=', false)
+        .execute();
 
-    await db
-      .updateTable('bank_transactions')
-      .set({
-        is_reconciled: true,
-        reconciled_at: new Date(),
-        reconciled_by: userId,
-      })
-      .where('bank_account_id', '=', updated.bank_account_id)
-      .where('is_reconciled', '=', false)
-      .execute();
-
-    return updated;
+      return updated;
+    });
   }
 
   // ================================================================

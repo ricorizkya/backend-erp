@@ -6,8 +6,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Kysely } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
-import { CreateJournalEntryDto, JournalFilterDto } from '../dto/accounting.dto';
+import {
+  CreateJournalEntryDto,
+  JournalEntryType,
+  JournalFilterDto,
+} from '../dto/accounting.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { FiscalPeriodService } from './fiscal-period.service';
 
@@ -191,20 +196,31 @@ export class JournalEntryService {
       }
     }
 
-    const period = await db
-      .selectFrom('accounting_periods')
-      .where('id', '=', dto.periodId)
-      .where('status', '=', 'open')
-      .select('id')
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const period = await trx
+        .selectFrom('accounting_periods')
+        .where('id', '=', dto.periodId)
+        .where('status', '=', 'open')
+        .select(['id', 'start_date', 'end_date'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!period) {
-      throw new ConflictException(
-        'Periode tidak ditemukan atau sudah ditutup/locked',
-      );
-    }
+      if (!period) {
+        throw new ConflictException(
+          'Periode tidak ditemukan atau sudah ditutup/locked',
+        );
+      }
 
-    return db.transaction().execute(async (trx) => {
+      const entryDate = new Date(dto.entryDate);
+      if (
+        entryDate < new Date(period.start_date) ||
+        entryDate > new Date(period.end_date)
+      ) {
+        throw new ConflictException(
+          'Tanggal journal berada di luar rentang periode akuntansi',
+        );
+      }
+
       const number = await this.docNumber.generate(trx, 'JE');
 
       const [journal] = await trx
@@ -212,7 +228,7 @@ export class JournalEntryService {
         .values({
           number,
           period_id: dto.periodId,
-          entry_date: new Date(dto.entryDate),
+          entry_date: entryDate,
           entry_type: dto.entryType,
           description: dto.description,
           folio: dto.folio ?? null,
@@ -250,44 +266,62 @@ export class JournalEntryService {
   // ----------------------------------------------------------------
 
   async post(db: Kysely<TenantSchema>, journalId: number, postedBy: number) {
-    const journal = await db
-      .selectFrom('journal_entries')
-      .where('id', '=', journalId)
-      .select([
-        'id',
-        'status',
-        'period_id',
-        'entry_date',
-        'total_debit',
-        'total_credit',
-        'number',
-      ])
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const journal = await trx
+        .selectFrom('journal_entries')
+        .where('id', '=', journalId)
+        .select([
+          'id',
+          'status',
+          'period_id',
+          'entry_date',
+          'total_debit',
+          'total_credit',
+          'number',
+        ])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!journal) throw new NotFoundException('Journal Entry tidak ditemukan');
-    if (journal.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya journal berstatus draft yang bisa diposting. Status: ${journal.status}`,
-      );
-    }
+      if (!journal)
+        throw new NotFoundException('Journal Entry tidak ditemukan');
+      if (journal.status !== 'draft') {
+        throw new ConflictException(
+          `Hanya journal berstatus draft yang bisa diposting. Status: ${journal.status}`,
+        );
+      }
 
-    const period = await db
-      .selectFrom('accounting_periods')
-      .where('id', '=', journal.period_id)
-      .where('status', '=', 'open')
-      .select('id')
-      .executeTakeFirst();
+      const period = await trx
+        .selectFrom('accounting_periods')
+        .where('id', '=', journal.period_id)
+        .where('status', '=', 'open')
+        .select('id')
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!period) {
-      throw new ConflictException('Periode sudah ditutup, tidak bisa posting');
-    }
+      if (!period) {
+        throw new ConflictException(
+          'Periode sudah ditutup, tidak bisa posting',
+        );
+      }
 
-    return db.transaction().execute(async (trx) => {
       const lines = await trx
         .selectFrom('journal_entry_lines')
         .where('journal_entry_id', '=', journalId)
         .selectAll()
         .execute();
+
+      const accountIds = [
+        ...new Set(lines.map((line) => line.account_id)),
+      ].sort((a, b) => a - b);
+      if (accountIds.length > 0) {
+        await trx
+          .selectFrom('accounts')
+          .where('id', 'in', accountIds)
+          .select('id')
+          .orderBy('id')
+          .forUpdate()
+          .execute();
+      }
 
       for (const line of lines) {
         const lastBalance = await trx
@@ -380,31 +414,39 @@ export class JournalEntryService {
     reversedBy: number,
     periodId: number,
   ) {
-    const journal = await this.findOne(db, journalId);
+    return executeInTransaction(db, async (trx) => {
+      const current = await trx
+        .selectFrom('journal_entries')
+        .where('id', '=', journalId)
+        .select(['id', 'status', 'reversed_by'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (journal.status !== 'posted') {
-      throw new ConflictException(
-        'Hanya journal yang sudah posted yang bisa di-reverse',
-      );
-    }
-    if (journal.reversed_by) {
-      throw new ConflictException('Journal ini sudah pernah di-reverse');
-    }
+      if (!current)
+        throw new NotFoundException('Journal Entry tidak ditemukan');
+      if (current.status !== 'posted') {
+        throw new ConflictException(
+          'Hanya journal yang sudah posted yang bisa di-reverse',
+        );
+      }
+      if (current.reversed_by) {
+        throw new ConflictException('Journal ini sudah pernah di-reverse');
+      }
 
-    const period = await db
-      .selectFrom('accounting_periods')
-      .where('id', '=', periodId)
-      .where('status', '=', 'open')
-      .select('id')
-      .executeTakeFirst();
+      const period = await trx
+        .selectFrom('accounting_periods')
+        .where('id', '=', periodId)
+        .where('status', '=', 'open')
+        .select('id')
+        .forShare()
+        .executeTakeFirst();
+      if (!period) throw new ConflictException('Periode reversal tidak open');
 
-    if (!period) throw new ConflictException('Periode reversal tidak open');
-
-    return db.transaction().execute(async (trx) => {
+      const journal = await this.findOne(trx, journalId);
       const reversalDto: CreateJournalEntryDto = {
         periodId,
         entryDate: new Date().toISOString().split('T')[0],
-        entryType: journal.entry_type as any,
+        entryType: journal.entry_type as JournalEntryType,
         description: `REVERSAL: ${journal.description}`,
         folio: `REV-${journal.number}`,
         referenceType: 'journal_reversal',
@@ -450,26 +492,58 @@ export class JournalEntryService {
     dto: Omit<CreateJournalEntryDto, 'periodId'> & { periodId?: number },
     postedBy: number,
   ): Promise<number> {
-    let periodId = dto.periodId;
-    if (!periodId) {
-      const period = await this.periodService.getActivePeriodForDate(
-        db,
-        new Date(dto.entryDate),
-      );
-      periodId = period.id;
+    try {
+      return await executeInTransaction(db, async (trx) => {
+        let periodId = dto.periodId;
+        if (!periodId) {
+          const period = await this.periodService.getActivePeriodForDate(
+            trx,
+            new Date(dto.entryDate),
+          );
+          periodId = period.id;
+        }
+
+        const payload: CreateJournalEntryDto = {
+          ...dto,
+          periodId,
+          lines: dto.lines.map((l, idx) => ({
+            ...l,
+            lineNumber: l.lineNumber ?? idx + 1,
+          })),
+        };
+
+        const journal = await this.create(trx, payload, postedBy);
+        await this.post(trx, journal.id, postedBy);
+        return journal.id;
+      });
+    } catch (error: unknown) {
+      const pgError = error as { code?: string; constraint?: string };
+      if (
+        pgError.code !== '23505' ||
+        pgError.constraint !== 'uq_journal_entry_business_reference' ||
+        !dto.referenceType ||
+        dto.referenceId === undefined
+      ) {
+        throw error;
+      }
+
+      const existing = await db
+        .selectFrom('journal_entries')
+        .where('reference_type', '=', dto.referenceType)
+        .where('reference_id', '=', dto.referenceId)
+        .select(['id', 'status'])
+        .executeTakeFirst();
+
+      if (!existing) throw error;
+      if (existing.status === 'draft') {
+        await this.post(db, existing.id, postedBy);
+      } else if (existing.status === 'reversed') {
+        throw new ConflictException(
+          'Journal dengan referensi bisnis tersebut sudah di-reverse',
+        );
+      }
+
+      return existing.id;
     }
-
-    const payload: CreateJournalEntryDto = {
-      ...dto,
-      periodId,
-      lines: dto.lines.map((l, idx) => ({
-        ...l,
-        lineNumber: l.lineNumber ?? idx + 1,
-      })),
-    };
-
-    const journal = await this.create(db, payload, postedBy);
-    await this.post(db, journal.id, postedBy);
-    return journal.id;
   }
 }

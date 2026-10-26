@@ -7,6 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
 import { HashIdService } from './hashid.service';
 import { HASH_SALT_KEY, SKIP_HASHID_KEY } from './hashid.constants';
 
@@ -43,8 +44,10 @@ export class HashIdInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
-    const salt = request[HASH_SALT_KEY] as string | undefined;
+    const request = context
+      .switchToHttp()
+      .getRequest<FastifyRequest & { [HASH_SALT_KEY]?: string }>();
+    const salt = request[HASH_SALT_KEY];
 
     // Jika salt tidak tersedia, skip encoding (e.g. auth routes tanpa tenant)
     if (!salt) {

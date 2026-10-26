@@ -104,12 +104,12 @@ export class MrpRunService {
           schemaVersion: 1,
           runId,
           tenantSchema,
-          planFrom: dto.planFrom,
-          planTo: dto.planTo,
-          triggeredBy,
+          planFrom: new Date(dto.planFrom).toISOString(),
+          planTo: new Date(dto.planTo).toISOString(),
+          triggeredBy: Number(triggeredBy),
         },
         {
-          jobId: runId.toString(),
+          jobId: `mrp-run-${runId}`,
           attempts: 1, // Retry dimatikan di BullMQ — di-handle oleh reconciliation service
           removeOnComplete: false,
           removeOnFail: false,
@@ -129,14 +129,15 @@ export class MrpRunService {
       await db
         .updateTable('mrp_runs')
         .set({
-          status: 'failed',
+          status: 'pending',
           error_message: `Queue error: ${errMsg}`,
         })
         .where('id', '=', runId)
+        .where('status', '=', 'pending')
         .execute();
 
-      throw new ConflictException(
-        `Gagal menjadwalkan job MRP ke queue: ${errMsg}`,
+      this.logger.warn(
+        `MRP run ${runId} remains pending after queue failure: ${errMsg}`,
       );
     }
 
@@ -236,31 +237,32 @@ export class MrpRunService {
   // ----------------------------------------------------------------
 
   async cancel(db: Kysely<TenantSchema>, runId: number) {
-    const run = await db
-      .selectFrom('mrp_runs')
-      .where('id', '=', runId)
-      .select(['id', 'status'])
-      .executeTakeFirst();
-
-    if (!run) throw new NotFoundException('MRP Run tidak ditemukan');
-    if (!['pending', 'running'].includes(run.status)) {
-      throw new ConflictException(
-        `Hanya MRP Run berstatus pending atau running yang bisa dibatalkan. Status saat ini: ${run.status}`,
-      );
-    }
-
-    await db
+    const result = await db
       .updateTable('mrp_runs')
       .set({
-        status: 'failed',
+        status: 'cancelled',
+        completed_at: new Date(),
         error_message: 'Cancelled by user',
       })
       .where('id', '=', runId)
-      .execute();
+      .where('status', 'in', ['pending', 'running'])
+      .executeTakeFirst();
+
+    if (Number(result.numUpdatedRows) !== 1) {
+      const run = await db
+        .selectFrom('mrp_runs')
+        .where('id', '=', runId)
+        .select('status')
+        .executeTakeFirst();
+      if (!run) throw new NotFoundException('MRP Run tidak ditemukan');
+      throw new ConflictException(
+        `MRP Run tidak dapat dibatalkan dari status ${run.status}.`,
+      );
+    }
 
     // Hapus dari BullMQ jika masih di queue
     try {
-      const job = await this.mrpQueue.getJob(runId.toString());
+      const job = await this.mrpQueue.getJob(`mrp-run-${runId}`);
       if (job) {
         await job.remove();
       }

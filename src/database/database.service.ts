@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/require-await */
-
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
 import { PublicSchema, TenantSchema } from 'src/types/database.types';
@@ -9,21 +6,9 @@ import { PublicSchema, TenantSchema } from 'src/types/database.types';
 @Injectable()
 export class DatabaseService {
   private readonly logger = new Logger(DatabaseService.name);
-  readonly pool: Pool;
   private readonly publicDb: Kysely<PublicSchema>;
 
-  constructor(private readonly config: ConfigService) {
-    this.pool = new Pool({
-      host: this.config.getOrThrow<string>('DB_HOST'),
-      port: this.config.getOrThrow<number>('DB_PORT'),
-      database: this.config.getOrThrow<string>('DB_NAME'),
-      user: this.config.getOrThrow<string>('DB_USER'),
-      password: this.config.getOrThrow<string>('DB_PASSWORD'),
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 3000,
-    });
-
+  constructor(readonly pool: Pool) {
     this.pool.on('error', (err) => {
       this.logger.error('PostgreSQL pool error', err);
     });
@@ -39,7 +24,7 @@ export class DatabaseService {
 
   async getTenantDb(tenantCode: string): Promise<{
     db: Kysely<TenantSchema>;
-    release: () => void;
+    release: () => Promise<void>;
   }> {
     this.validateTenantCode(tenantCode);
     const schemaName = `tenant_${tenantCode}`;
@@ -53,23 +38,39 @@ export class DatabaseService {
       throw error;
     }
 
-    // Simpan fungsi release asli
-    const originalRelease = client.release.bind(client);
+    const originalRelease = client.release.bind(client) as unknown as (
+      err?: Error | boolean,
+    ) => void;
     // Kosongkan fungsi release agar Kysely tidak mengembalikan koneksi ke pool setiap selesai 1 query
     client.release = () => {};
 
     const db = new Kysely<TenantSchema>({
       dialect: new PostgresDialect({
         pool: {
-          connect: async () => client,
-          end: async () => {},
+          connect: () => Promise.resolve(client),
+          end: () => Promise.resolve(),
         },
       }),
     });
 
+    let released = false;
+    const release = async (): Promise<void> => {
+      if (released) return;
+      released = true;
+
+      try {
+        await client.query('RESET search_path');
+        originalRelease();
+      } catch (error) {
+        // A connection with an unknown session state must never return to the pool.
+        originalRelease(true);
+        throw error;
+      }
+    };
+
     return {
       db,
-      release: () => originalRelease(),
+      release,
     };
   }
 
@@ -82,12 +83,12 @@ export class DatabaseService {
     try {
       return await db.transaction().execute(fn);
     } finally {
-      release();
+      await release();
     }
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.pool.end();
+    await this.publicDb.destroy();
     this.logger.log('Database pool closed');
   }
 

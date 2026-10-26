@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Kysely, sql } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateWorkOrderDto,
@@ -18,6 +19,8 @@ import { DocumentNumberService } from '../../../common/document-number.service';
 import { BomService } from '../../bom/services/bom.service';
 import { JournalEntryService } from '../../accounting/services/journal-entry.service';
 import { AccountService } from '../../accounting/services/account.service';
+import { JournalEntryType } from '../../accounting/dto/accounting.dto';
+import { getStockOnHand, lockStockKeys } from '../../../database/stock-lock';
 
 @Injectable()
 export class WorkOrderService {
@@ -244,7 +247,7 @@ export class WorkOrderService {
       );
     }
 
-    return db.transaction().execute(async (trx) => {
+    return executeInTransaction(db, async (trx) => {
       const number = await this.docNumber.generate(trx, 'WO');
 
       const [wo] = await trx
@@ -304,8 +307,16 @@ export class WorkOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', woId)
+      .where('status', 'not in', ['completed', 'cancelled'])
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const current = await this.getWoOrThrow(db, woId);
+      throw new ConflictException(
+        `WO berstatus ${current.status} tidak bisa dibatalkan`,
+      );
+    }
 
     return updated;
   }
@@ -316,28 +327,29 @@ export class WorkOrderService {
   // ----------------------------------------------------------------
 
   async confirm(db: Kysely<TenantSchema>, woId: number, confirmedBy: number) {
-    const wo = await db
-      .selectFrom('work_orders')
-      .where('id', '=', woId)
-      .select([
-        'id',
-        'status',
-        'bom_version_id',
-        'quantity_planned',
-        'uom_id',
-        'output_warehouse_id',
-        'variant_id',
-      ])
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const wo = await trx
+        .selectFrom('work_orders')
+        .where('id', '=', woId)
+        .select([
+          'id',
+          'status',
+          'bom_version_id',
+          'quantity_planned',
+          'uom_id',
+          'output_warehouse_id',
+          'variant_id',
+        ])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!wo) throw new NotFoundException('Work Order tidak ditemukan');
-    if (wo.status !== 'draft') {
-      throw new ConflictException(
-        `WO berstatus ${wo.status} tidak bisa dikonfirmasi`,
-      );
-    }
+      if (!wo) throw new NotFoundException('Work Order tidak ditemukan');
+      if (wo.status !== 'draft') {
+        throw new ConflictException(
+          `WO berstatus ${wo.status} tidak bisa dikonfirmasi`,
+        );
+      }
 
-    return db.transaction().execute(async (trx) => {
       // Explode BOM untuk kalkulasi material requirements
       const exploded = await this.bomService.explodeBom(
         trx,
@@ -420,11 +432,6 @@ export class WorkOrderService {
   // ----------------------------------------------------------------
 
   async startProduction(db: Kysely<TenantSchema>, woId: number) {
-    const wo = await this.getWoOrThrow(db, woId);
-    if (wo.status !== 'confirmed') {
-      throw new ConflictException(`WO harus berstatus confirmed untuk dimulai`);
-    }
-
     const [updated] = await db
       .updateTable('work_orders')
       .set({
@@ -433,8 +440,16 @@ export class WorkOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', woId)
+      .where('status', '=', 'confirmed')
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const wo = await this.getWoOrThrow(db, woId);
+      throw new ConflictException(
+        `WO berstatus ${wo.status} tidak bisa dimulai`,
+      );
+    }
 
     return updated;
   }
@@ -449,15 +464,101 @@ export class WorkOrderService {
     dto: ConsumeMaterialsDto,
     consumedBy: number,
   ) {
-    const wo = await this.getWoOrThrow(db, woId);
-    if (!['confirmed', 'in_progress'].includes(wo.status)) {
-      throw new ConflictException(
-        'Konsumsi material hanya bisa dilakukan pada WO confirmed atau in_progress',
-      );
-    }
+    return executeInTransaction(db, async (trx) => {
+      const wo = await trx
+        .selectFrom('work_orders')
+        .where('id', '=', woId)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
 
-    return db.transaction().execute(async (trx) => {
-      // Ambil movement type PRODUCTION_OUT
+      if (!wo) throw new NotFoundException('Work Order tidak ditemukan');
+      if (!['confirmed', 'in_progress', 'partially_done'].includes(wo.status)) {
+        throw new ConflictException(
+          'Konsumsi material hanya bisa dilakukan pada WO aktif',
+        );
+      }
+
+      const consumptions: Array<{
+        item: (typeof dto.items)[number];
+        material: {
+          id: number;
+          variant_id: number;
+          quantity_planned: number;
+          quantity_consumed: number;
+          warehouse_id: number;
+          uom_id: number;
+        };
+        warehouseId: number;
+      }> = [];
+
+      for (const item of dto.items) {
+        const woMaterial = await trx
+          .selectFrom('work_order_materials')
+          .where('id', '=', item.woMaterialId)
+          .where('work_order_id', '=', woId)
+          .select([
+            'id',
+            'variant_id',
+            'quantity_planned',
+            'quantity_consumed',
+            'warehouse_id',
+            'uom_id',
+          ])
+          .forUpdate()
+          .executeTakeFirst();
+
+        if (!woMaterial) {
+          throw new NotFoundException(
+            `WO Material ${item.woMaterialId} tidak ditemukan`,
+          );
+        }
+
+        const warehouseId = item.warehouseId ?? woMaterial.warehouse_id;
+        consumptions.push({
+          item,
+          material: woMaterial,
+          warehouseId,
+        });
+      }
+
+      const stockRequirements = new Map<
+        string,
+        {
+          variantId: number;
+          warehouseId: number;
+          batchId: number | null;
+          quantity: number;
+        }
+      >();
+      for (const consumption of consumptions) {
+        const { item, material, warehouseId } = consumption;
+        const key = `${material.variant_id}:${warehouseId}:${item.batchId ?? 0}`;
+        const existing = stockRequirements.get(key);
+        if (existing) {
+          existing.quantity += item.quantityConsumed;
+        } else {
+          stockRequirements.set(key, {
+            variantId: material.variant_id,
+            warehouseId,
+            batchId: item.batchId ?? null,
+            quantity: item.quantityConsumed,
+          });
+        }
+      }
+
+      const requirements = [...stockRequirements.values()];
+      await lockStockKeys(trx, requirements);
+      for (const requirement of requirements) {
+        const available = await getStockOnHand(trx, requirement);
+        if (available < requirement.quantity) {
+          throw new BadRequestException(
+            `Stok tidak mencukupi untuk material variant ${requirement.variantId}. ` +
+              `Tersedia: ${available}, dibutuhkan: ${requirement.quantity}`,
+          );
+        }
+      }
+
       const movType = await trx
         .selectFrom('inventory_movement_types')
         .where('code', '=', 'PRODUCTION_OUT')
@@ -467,7 +568,6 @@ export class WorkOrderService {
       if (!movType)
         throw new Error('Movement type PRODUCTION_OUT tidak ditemukan');
 
-      // Buat satu inventory movement untuk semua konsumsi ini
       const [movement] = await trx
         .insertInto('inventory_movements')
         .values({
@@ -484,28 +584,8 @@ export class WorkOrderService {
         .returningAll()
         .execute();
 
-      for (const item of dto.items) {
-        const woMaterial = await trx
-          .selectFrom('work_order_materials')
-          .where('id', '=', item.woMaterialId)
-          .where('work_order_id', '=', woId)
-          .select([
-            'id',
-            'variant_id',
-            'quantity_planned',
-            'quantity_consumed',
-            'warehouse_id',
-            'uom_id',
-          ])
-          .executeTakeFirst();
-
-        if (!woMaterial) {
-          throw new NotFoundException(
-            `WO Material ${item.woMaterialId} tidak ditemukan`,
-          );
-        }
-
-        const warehouseId = item.warehouseId ?? woMaterial.warehouse_id;
+      for (const consumption of consumptions) {
+        const { item, material: woMaterial, warehouseId } = consumption;
 
         await trx
           .insertInto('inventory_movement_items')
@@ -550,12 +630,8 @@ export class WorkOrderService {
           .execute();
       }
 
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
-        trx,
-      );
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
-        trx,
-      );
+      await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(trx);
+      await sql`REFRESH MATERIALIZED VIEW available_stock`.execute(trx);
 
       return this.findOne(trx, woId);
     });
@@ -571,28 +647,29 @@ export class WorkOrderService {
     dto: CreateProductionResultDto,
     createdBy: number,
   ) {
-    const wo = await db
-      .selectFrom('work_orders')
-      .where('id', '=', woId)
-      .select([
-        'id',
-        'status',
-        'variant_id',
-        'quantity_planned',
-        'quantity_produced',
-        'output_warehouse_id',
-        'bom_version_id',
-      ])
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const wo = await trx
+        .selectFrom('work_orders')
+        .where('id', '=', woId)
+        .select([
+          'id',
+          'status',
+          'variant_id',
+          'quantity_planned',
+          'quantity_produced',
+          'output_warehouse_id',
+          'bom_version_id',
+        ])
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!wo) throw new NotFoundException('Work Order tidak ditemukan');
-    if (!['confirmed', 'in_progress'].includes(wo.status)) {
-      throw new ConflictException(
-        'Production result hanya bisa dicatat pada WO confirmed atau in_progress',
-      );
-    }
+      if (!wo) throw new NotFoundException('Work Order tidak ditemukan');
+      if (!['confirmed', 'in_progress', 'partially_done'].includes(wo.status)) {
+        throw new ConflictException(
+          'Production result hanya bisa dicatat pada WO aktif',
+        );
+      }
 
-    return db.transaction().execute(async (trx) => {
       let batchId: number | null = null;
       if (dto.batchNumber) {
         const [batch] = await trx
@@ -685,12 +762,8 @@ export class WorkOrderService {
         .where('id', '=', woId)
         .execute();
 
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
-        trx,
-      );
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
-        trx,
-      );
+      await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(trx);
+      await sql`REFRESH MATERIALIZED VIEW available_stock`.execute(trx);
 
       // Auto-post Journal Entry saat WO selesai (Persediaan Barang Jadi vs Biaya Bahan Baku)
       if (newStatus === 'completed') {
@@ -734,7 +807,7 @@ export class WorkOrderService {
             trx,
             {
               entryDate: new Date().toISOString(),
-              entryType: 'production' as any,
+              entryType: JournalEntryType.PRODUCTION,
               description: `Hasil Produksi - WO #${woId}`,
               folio: `WO-${woId}`,
               referenceType: 'work_order',
@@ -770,17 +843,6 @@ export class WorkOrderService {
   // ----------------------------------------------------------------
 
   async startOperation(db: Kysely<TenantSchema>, opId: number, userId: number) {
-    const op = await db
-      .selectFrom('work_order_operations')
-      .where('id', '=', opId)
-      .select(['id', 'status'])
-      .executeTakeFirst();
-
-    if (!op) throw new NotFoundException('Operation tidak ditemukan');
-    if (op.status !== 'pending') {
-      throw new ConflictException(`Operation berstatus ${op.status}`);
-    }
-
     const [updated] = await db
       .updateTable('work_order_operations')
       .set({
@@ -790,26 +852,24 @@ export class WorkOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', opId)
+      .where('status', '=', 'pending')
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const op = await db
+        .selectFrom('work_order_operations')
+        .where('id', '=', opId)
+        .select(['id', 'status'])
+        .executeTakeFirst();
+      if (!op) throw new NotFoundException('Operation tidak ditemukan');
+      throw new ConflictException(`Operation berstatus ${op.status}`);
+    }
 
     return updated;
   }
 
   async completeOperation(db: Kysely<TenantSchema>, opId: number) {
-    const op = await db
-      .selectFrom('work_order_operations')
-      .where('id', '=', opId)
-      .select(['id', 'status'])
-      .executeTakeFirst();
-
-    if (!op) throw new NotFoundException('Operation tidak ditemukan');
-    if (op.status !== 'in_progress') {
-      throw new ConflictException(
-        'Operation harus in_progress untuk diselesaikan',
-      );
-    }
-
     const [updated] = await db
       .updateTable('work_order_operations')
       .set({
@@ -818,8 +878,21 @@ export class WorkOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', opId)
+      .where('status', '=', 'in_progress')
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const op = await db
+        .selectFrom('work_order_operations')
+        .where('id', '=', opId)
+        .select(['id', 'status'])
+        .executeTakeFirst();
+      if (!op) throw new NotFoundException('Operation tidak ditemukan');
+      throw new ConflictException(
+        `Operation berstatus ${op.status} tidak bisa diselesaikan`,
+      );
+    }
 
     return updated;
   }

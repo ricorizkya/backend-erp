@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, type ReferenceExpression } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateQcInspectionDto,
@@ -208,7 +208,8 @@ export class QcInspectionService {
     if (!checklist)
       throw new NotFoundException('Checklist tidak ditemukan atau tidak aktif');
 
-    if (checklist.inspection_type !== dto.inspectionType) {
+    const requestedInspectionType: string = dto.inspectionType;
+    if (checklist.inspection_type !== requestedInspectionType) {
       throw new BadRequestException(
         `Checklist ini untuk tipe inspeksi "${checklist.inspection_type}", ` +
           `bukan "${dto.inspectionType}"`,
@@ -279,40 +280,40 @@ export class QcInspectionService {
     dto: CompleteInspectionDto,
     inspectedBy: number,
   ) {
-    const inspection = await db
-      .selectFrom('qc_inspections')
-      .where('id', '=', inspectionId)
-      .select(['id', 'status', 'checklist_id', 'uom_id'])
-      .executeTakeFirst();
-
-    if (!inspection)
-      throw new NotFoundException('QC Inspection tidak ditemukan');
-    if (inspection.status !== 'draft') {
-      throw new ConflictException(
-        `Inspeksi berstatus ${inspection.status} tidak bisa diselesaikan`,
-      );
-    }
-
-    // Validasi semua required items harus diisi
-    const requiredItems = await db
-      .selectFrom('qc_checklist_items')
-      .where('checklist_id', '=', inspection.checklist_id)
-      .where('is_required', '=', true)
-      .select('id')
-      .execute();
-
-    const submittedIds = new Set(dto.items.map((i) => i.checklistItemId));
-    const missingRequired = requiredItems.filter(
-      (ri) => !submittedIds.has(ri.id),
-    );
-
-    if (missingRequired.length > 0) {
-      throw new BadRequestException(
-        `${missingRequired.length} parameter wajib belum diisi`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const inspection = await trx
+        .selectFrom('qc_inspections')
+        .where('id', '=', inspectionId)
+        .select(['id', 'status', 'checklist_id', 'uom_id'])
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!inspection)
+        throw new NotFoundException('QC Inspection tidak ditemukan');
+      if (inspection.status !== 'draft') {
+        throw new ConflictException(
+          `Inspeksi berstatus ${inspection.status} tidak bisa diselesaikan`,
+        );
+      }
+
+      const requiredItems = await trx
+        .selectFrom('qc_checklist_items')
+        .where('checklist_id', '=', inspection.checklist_id)
+        .where('is_required', '=', true)
+        .select('id')
+        .execute();
+
+      const submittedIds = new Set(dto.items.map((i) => i.checklistItemId));
+      const missingRequired = requiredItems.filter(
+        (ri) => !submittedIds.has(ri.id),
+      );
+
+      if (missingRequired.length > 0) {
+        throw new BadRequestException(
+          `${missingRequired.length} parameter wajib belum diisi`,
+        );
+      }
+
       // Insert inspection items
       if (dto.items.length > 0) {
         const paramIds = dto.items
@@ -440,11 +441,19 @@ export class QcInspectionService {
       );
     }
 
-    await db
+    const cancelled = await db
       .updateTable('qc_inspections')
       .set({ status: 'cancelled', updated_at: new Date() })
       .where('id', '=', inspectionId)
-      .execute();
+      .where('status', '=', 'draft')
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'QC Inspection tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return { message: 'QC Inspection berhasil dibatalkan' };
   }
@@ -469,8 +478,22 @@ export class QcInspectionService {
         'qdt.code',
         'qdt.name as defect_name',
         'qdt.severity',
-        db.fn.count<number>('qd.id' as any).as('occurrence_count'),
-        db.fn.sum<number>('qd.quantity_defective' as any).as('total_quantity'),
+        db.fn
+          .count<number>(
+            'qd.id' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('occurrence_count'),
+        db.fn
+          .sum<number>(
+            'qd.quantity_defective' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('total_quantity'),
       ]);
 
     if (inspectionType) {

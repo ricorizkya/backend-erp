@@ -898,7 +898,12 @@ export interface MrpRunsTable {
   plan_from: Date;
   plan_to: Date;
   status: Generated<
-    'pending' | 'running' | 'completed' | 'failed' | 'failed_permanent'
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'failed_permanent'
+    | 'cancelled'
   >;
   total_planned_production: Generated<number>;
   total_planned_purchase: Generated<number>;

@@ -270,7 +270,7 @@ export class WarehouseService {
 
     // Soft delete — cukup set is_active = false
     // karena lokasi mungkin masih di-reference di movement history
-    const [updated] = await db
+    await db
       .updateTable('warehouse_locations')
       .set({ is_active: false })
       .where('id', '=', locationId)

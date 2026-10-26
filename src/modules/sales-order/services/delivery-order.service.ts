@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { Kysely, sql } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
@@ -11,9 +12,22 @@ import { DocumentNumberService } from '../../../common/document-number.service';
 import { SalesOrderService } from './sales-order.service';
 import { JournalEntryService } from '../../accounting/services/journal-entry.service';
 import { AccountService } from '../../accounting/services/account.service';
+import { JournalEntryType } from '../../accounting/dto/accounting.dto';
+import { getStockOnHand, lockStockKeys } from '../../../database/stock-lock';
+
+export function calculateCogs(
+  lines: readonly { quantity: number; costPrice: number }[],
+): number {
+  return lines.reduce(
+    (total, line) => total + line.quantity * line.costPrice,
+    0,
+  );
+}
 
 @Injectable()
 export class DeliveryOrderService {
+  private readonly logger = new Logger(DeliveryOrderService.name);
+
   constructor(
     private readonly docNumber: DocumentNumberService,
     private readonly soService: SalesOrderService,
@@ -215,20 +229,36 @@ export class DeliveryOrderService {
   // ----------------------------------------------------------------
 
   async confirm(db: Kysely<TenantSchema>, doId: number, confirmedBy: number) {
-    const do_ = await db
-      .selectFrom('delivery_orders')
-      .where('id', '=', doId)
-      .select(['id', 'status', 'so_id', 'warehouse_id'])
-      .executeTakeFirst();
-
-    if (!do_) throw new NotFoundException('Delivery Order tidak ditemukan');
-    if (do_.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya DO berstatus draft yang bisa dikonfirmasi. Status: ${do_.status}`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const do_ = await trx
+        .selectFrom('delivery_orders')
+        .where('id', '=', doId)
+        .select(['id', 'status', 'so_id', 'warehouse_id'])
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!do_) throw new NotFoundException('Delivery Order tidak ditemukan');
+      if (do_.status !== 'draft') {
+        throw new ConflictException(
+          `Hanya DO berstatus draft yang bisa dikonfirmasi. Status: ${do_.status}`,
+        );
+      }
+
+      const salesOrder = await trx
+        .selectFrom('sales_orders')
+        .where('id', '=', do_.so_id)
+        .select(['id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
+      if (
+        !salesOrder ||
+        !['confirmed', 'partial'].includes(salesOrder.status)
+      ) {
+        throw new ConflictException(
+          'Sales Order tidak lagi dapat diproses untuk pengiriman',
+        );
+      }
+
       // 1. Ambil movement type SALES_DELIVERY
       const movType = await trx
         .selectFrom('inventory_movement_types')
@@ -256,10 +286,11 @@ export class DeliveryOrderService {
         .returningAll()
         .execute();
 
-      // 3. Ambil DO items dengan unit_cost dari SO
+      // 3. Ambil DO items dengan cost price inventory, bukan harga jual SO
       const doItems = await trx
         .selectFrom('delivery_order_items as doi')
         .innerJoin('sales_order_items as soi', 'soi.id', 'doi.so_item_id')
+        .innerJoin('product_variants as pv', 'pv.id', 'doi.variant_id')
         .where('doi.do_id', '=', doId)
         .select([
           'doi.variant_id',
@@ -267,9 +298,44 @@ export class DeliveryOrderService {
           'doi.quantity_delivered',
           'doi.uom_id',
           'doi.location_id',
-          'soi.unit_price',
+          'pv.cost_price',
         ])
         .execute();
+
+      const stockRequirements = new Map<
+        string,
+        {
+          variantId: number;
+          warehouseId: number;
+          batchId: number | null;
+          quantity: number;
+        }
+      >();
+      for (const item of doItems) {
+        const key = `${item.variant_id}:${do_.warehouse_id}:${item.batch_id ?? 0}`;
+        const existing = stockRequirements.get(key);
+        if (existing) {
+          existing.quantity += Number(item.quantity_delivered);
+        } else {
+          stockRequirements.set(key, {
+            variantId: item.variant_id,
+            warehouseId: do_.warehouse_id,
+            batchId: item.batch_id,
+            quantity: Number(item.quantity_delivered),
+          });
+        }
+      }
+      const requirements = [...stockRequirements.values()];
+      await lockStockKeys(trx, requirements);
+      for (const requirement of requirements) {
+        const available = await getStockOnHand(trx, requirement);
+        if (available < requirement.quantity) {
+          throw new BadRequestException(
+            `Stok tidak mencukupi untuk SKU variant ${requirement.variantId}. ` +
+              `Tersedia: ${available}, dibutuhkan: ${requirement.quantity}`,
+          );
+        }
+      }
 
       // 4. Insert inventory movement items (keluar dari gudang)
       await trx
@@ -283,7 +349,7 @@ export class DeliveryOrderService {
             from_location_id: item.location_id ?? null,
             quantity: item.quantity_delivered,
             uom_id: item.uom_id,
-            unit_cost: Number(item.unit_price),
+            unit_cost: Number(item.cost_price ?? 0),
           })),
         )
         .execute();
@@ -302,22 +368,32 @@ export class DeliveryOrderService {
         .execute();
 
       // 6. Refresh stock_summary dan available_stock
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
-        trx,
-      );
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(
-        trx,
-      );
+      await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(trx);
+      await sql`REFRESH MATERIALIZED VIEW available_stock`.execute(trx);
 
       // 7. Update SO delivered quantities + status
       await this.soService.updateDeliveredQuantity(trx, do_.so_id);
 
       // 8. Auto-post Journal Entry (HPP vs Persediaan Barang Jadi)
-      const totalCost = doItems.reduce(
-        (sum, item) =>
-          sum + Number(item.unit_price) * Number(item.quantity_delivered),
-        0,
+      const totalCost = calculateCogs(
+        doItems.map((item) => ({
+          quantity: Number(item.quantity_delivered),
+          costPrice: Number(item.cost_price ?? 0),
+        })),
       );
+
+      for (const item of doItems) {
+        if (Number(item.cost_price ?? 0) === 0) {
+          // Costing v1 deliberately permits zero cost but makes it observable.
+          this.logger.warn(
+            JSON.stringify({
+              event: 'inventory.zero_cost_price',
+              variantId: item.variant_id,
+              deliveryOrderId: doId,
+            }),
+          );
+        }
+      }
 
       if (totalCost > 0) {
         const cogsAccount = await this.accountService.getSystemAccount(
@@ -333,7 +409,7 @@ export class DeliveryOrderService {
           trx,
           {
             entryDate: new Date().toISOString(),
-            entryType: 'sales' as any,
+            entryType: JournalEntryType.SALES,
             description: `Pengiriman Barang - DO #${doId}`,
             folio: `DO-${doId}`,
             referenceType: 'delivery_order',
@@ -382,7 +458,7 @@ export class DeliveryOrderService {
       );
     }
 
-    await db
+    const cancelled = await db
       .updateTable('delivery_orders')
       .set({
         status: 'cancelled',
@@ -391,7 +467,15 @@ export class DeliveryOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', doId)
-      .execute();
+      .where('status', '=', 'draft')
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'Delivery Order tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return { message: 'Delivery Order berhasil dibatalkan' };
   }

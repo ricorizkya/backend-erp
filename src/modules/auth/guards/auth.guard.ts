@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   ExecutionContext,
@@ -57,7 +56,10 @@ export const RequirePermission =
     const metadata: RequiredPermission = { module, action };
     if (descriptor) {
       // Method decorator
-      Reflect.defineMetadata(PERMISSION_KEY, metadata, descriptor.value);
+      const method = descriptor.value as unknown;
+      if (typeof method === 'function') {
+        Reflect.defineMetadata(PERMISSION_KEY, metadata, method);
+      }
     } else {
       // Class decorator
       Reflect.defineMetadata(PERMISSION_KEY, metadata, target);
@@ -80,8 +82,10 @@ export class PermissionGuard implements CanActivate {
     // Kalau tidak ada @RequirePermission, endpoint ini public (setelah JWT)
     if (!required) return true;
 
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user as AuthenticatedUser;
+    const request = ctx
+      .switchToHttp()
+      .getRequest<{ user?: AuthenticatedUser }>();
+    const user = request.user;
 
     if (!user) {
       throw new UnauthorizedException('User tidak terautentikasi');

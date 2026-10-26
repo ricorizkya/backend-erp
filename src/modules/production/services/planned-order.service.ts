@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Kysely } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
 import { PlannedOrderFilterDto } from '../dto/mrp-run.dto';
 import { ProductionType } from '../dto/production.dto';
@@ -151,23 +152,23 @@ export class PlannedOrderService {
     plannedOrderId: number,
     approvedBy: number,
   ) {
-    const plannedOrder = await db
-      .selectFrom('planned_orders')
-      .where('id', '=', plannedOrderId)
-      .selectAll()
-      .executeTakeFirst();
+    return executeInTransaction(db, async (trx) => {
+      const plannedOrder = await trx
+        .selectFrom('planned_orders')
+        .where('id', '=', plannedOrderId)
+        .selectAll()
+        .forUpdate()
+        .executeTakeFirst();
 
-    if (!plannedOrder) {
-      throw new NotFoundException('Planned Order tidak ditemukan');
-    }
+      if (!plannedOrder) {
+        throw new NotFoundException('Planned Order tidak ditemukan');
+      }
+      if (plannedOrder.status !== 'proposed') {
+        throw new ConflictException(
+          `Hanya Planned Order berstatus proposed yang bisa di-approve. Status: ${plannedOrder.status}`,
+        );
+      }
 
-    if (plannedOrder.status !== 'proposed') {
-      throw new ConflictException(
-        `Hanya Planned Order berstatus proposed yang bisa di-approve. Status: ${plannedOrder.status}`,
-      );
-    }
-
-    return db.transaction().execute(async (trx) => {
       let createdWoId: number | null = null;
       let createdPoId: number | null = null;
 
@@ -343,14 +344,22 @@ export class PlannedOrderService {
       );
     }
 
-    await db
+    const cancelled = await db
       .updateTable('planned_orders')
       .set({
         status: 'cancelled',
         updated_at: new Date(),
       })
       .where('id', '=', plannedOrderId)
-      .execute();
+      .where('status', '=', 'proposed')
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'Planned Order tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return { message: `Planned Order #${plannedOrderId} berhasil dibatalkan` };
   }

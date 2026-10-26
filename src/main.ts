@@ -94,4 +94,4 @@ async function bootstrap() {
   console.log(`ERP API running on port ${port}`);
 }
 
-bootstrap();
+void bootstrap();

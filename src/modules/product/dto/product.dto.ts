@@ -8,7 +8,6 @@ import {
   MaxLength,
   IsArray,
   ValidateNested,
-  IsEnum,
   IsInt,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
@@ -195,7 +194,9 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toUpperCase().trim() : value,
+  )
   code: string;
 
   @IsString()

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Kysely } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
-import { CreateApPaymentDto } from '../dto/accounting.dto';
+import { CreateApPaymentDto, JournalEntryType } from '../dto/accounting.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
 import { JournalEntryService } from './journal-entry.service';
 import { AccountService } from './account.service';
@@ -131,6 +131,15 @@ export class ApService {
       throw new BadRequestException('Minimal satu alokasi hutang diperlukan');
     }
 
+    const transactionIds = dto.allocations
+      .map((allocation) => allocation.apTransactionId)
+      .sort((a, b) => a - b);
+    if (new Set(transactionIds).size !== transactionIds.length) {
+      throw new BadRequestException(
+        'Satu transaksi AP hanya boleh muncul sekali dalam alokasi pembayaran',
+      );
+    }
+
     const totalAmount = dto.allocations.reduce((s, a) => s + a.amount, 0);
 
     for (const alloc of dto.allocations) {
@@ -177,6 +186,53 @@ export class ApService {
     );
 
     return db.transaction().execute(async (trx) => {
+      const lockedTransactions = await trx
+        .selectFrom('ap_transactions')
+        .where('id', 'in', transactionIds)
+        .where('supplier_id', '=', dto.supplierId)
+        .where('status', 'in', ['open', 'partial'])
+        .select(['id', 'outstanding_amount', 'vendor_invoice_id'])
+        .orderBy('id')
+        .forUpdate()
+        .execute();
+      const transactionById = new Map(
+        lockedTransactions.map((transaction) => [transaction.id, transaction]),
+      );
+
+      for (const allocation of dto.allocations) {
+        const transaction = transactionById.get(allocation.apTransactionId);
+        if (!transaction) {
+          throw new NotFoundException(
+            `AP Transaction ${allocation.apTransactionId} tidak ditemukan atau sudah lunas`,
+          );
+        }
+        const outstanding = Number(transaction.outstanding_amount ?? 0);
+        if (allocation.amount > outstanding + 0.01) {
+          throw new BadRequestException(
+            `Alokasi melebihi outstanding hutang. Outstanding: ${outstanding}, dialokasikan: ${allocation.amount}`,
+          );
+        }
+      }
+
+      const invoiceIds = lockedTransactions
+        .map((transaction) => transaction.vendor_invoice_id)
+        .sort((a, b) => a - b);
+      const invoices = await trx
+        .selectFrom('vendor_invoices')
+        .where('id', 'in', invoiceIds)
+        .select(['id', 'status'])
+        .orderBy('id')
+        .forUpdate()
+        .execute();
+      if (
+        invoices.length !== invoiceIds.length ||
+        invoices.some((invoice) => invoice.status === 'cancelled')
+      ) {
+        throw new ConflictException(
+          'Pembayaran tidak dapat diproses karena invoice sudah dibatalkan',
+        );
+      }
+
       const number = await this.docNumber.generate(trx, 'APV');
 
       const journalId = await this.journalService.autoPost(
@@ -184,7 +240,7 @@ export class ApService {
         {
           periodId: period.id,
           entryDate: dto.paymentDate,
-          entryType: 'payment' as any,
+          entryType: JournalEntryType.PAYMENT,
           description: `Pembayaran hutang supplier - ${number}`,
           folio: number,
           referenceType: 'ap_payment',

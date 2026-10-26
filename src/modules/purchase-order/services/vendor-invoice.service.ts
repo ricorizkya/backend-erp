@@ -319,8 +319,16 @@ export class VendorInvoiceService {
       .updateTable('vendor_invoices')
       .set({ status: 'cancelled', updated_at: new Date() })
       .where('id', '=', invoiceId)
+      .where('status', '!=', 'cancelled')
+      .where('paid_amount', '=', 0)
       .returningAll()
       .execute();
+
+    if (!updated) {
+      throw new ConflictException(
+        'Invoice tidak dapat dibatalkan karena status pembayaran sudah berubah',
+      );
+    }
 
     return updated;
   }

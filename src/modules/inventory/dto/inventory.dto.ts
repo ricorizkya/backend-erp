@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   IsString,
   IsNotEmpty,
@@ -73,7 +72,9 @@ export class CreateWarehouseDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toUpperCase().trim() : value,
+  )
   code: string;
 
   @IsEnum(WarehouseType)
@@ -102,7 +103,9 @@ export class CreateWarehouseLocationDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => value?.toUpperCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toUpperCase().trim() : value,
+  )
   code: string;
 
   @IsOptional()

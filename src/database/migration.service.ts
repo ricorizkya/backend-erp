@@ -94,7 +94,7 @@ export class MigrationService {
       .sort();
 
     for (const filename of files) {
-      if (filename === '000_create_migration_history.sql') continue;
+      if (filename === '000_create_migrations_history.sql') continue;
       await this.applyMigration(client, migrationsPath, filename, schemaName);
     }
   }
@@ -121,22 +121,10 @@ export class MigrationService {
       const storedChecksum = existing.rows[0].checksum;
 
       if (storedChecksum !== checksum) {
-        if (process.env.NODE_ENV !== 'production') {
-          this.logger.warn(
-            `Migration checksum updated for ${filename} (${schemaName}) in development.`,
-          );
-          await client.query(
-            `UPDATE public.migration_history SET checksum = $1 WHERE schema_name = $2 AND filename = $3`,
-            [checksum, schemaName, filename],
-          );
-          return;
-        }
-
         throw new Error(
-          `Migration checksum mismatch: ${filename}` +
-            `(schema : ${schemaName}). ` +
-            `Do not edit migration file was running. ` +
-            `Make new migration for schema.`,
+          `Migration checksum mismatch: ${filename} ` +
+            `(schema: ${schemaName}, stored: ${storedChecksum}, file: ${checksum}). ` +
+            `Create a new migration instead of editing an applied migration.`,
         );
       }
       return;

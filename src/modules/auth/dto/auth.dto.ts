@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   IsEmail,
   IsString,
@@ -11,7 +10,9 @@ import { Transform } from 'class-transformer';
 
 export class LoginDto {
   @IsEmail({}, { message: 'Format email tidak valid' })
-  @Transform(({ value }) => value?.toLowerCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   email: string;
 
   @IsString()
@@ -22,7 +23,9 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: 'Kode perusahaan tidak boleh kosong' })
   @MaxLength(50)
-  @Transform(({ value }) => value?.toLowerCase().trim())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   // Hanya huruf kecil, angka, underscore — sama dengan validasi tenant code
   @Matches(/^[a-z0-9_]+$/, {
     message: 'Kode perusahaan hanya boleh huruf kecil, angka, dan underscore',

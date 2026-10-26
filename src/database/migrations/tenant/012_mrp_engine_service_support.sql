@@ -14,7 +14,7 @@ ALTER TABLE mrp_runs
 -- Tambah constraint baru dengan status yang diperluas
 ALTER TABLE mrp_runs
   ADD CONSTRAINT mrp_runs_status_check
-    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'failed_permanent'));
+    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'failed_permanent', 'cancelled'));
 
 -- 3. Tambah kolom baru di mrp_runs
 ALTER TABLE mrp_runs
@@ -40,8 +40,7 @@ ALTER TABLE product_variants
 
 -- 5. Index untuk reconciliation cron (query mrp_runs stuck jobs)
 CREATE INDEX IF NOT EXISTS idx_mrp_runs_reconciliation
-  ON mrp_runs (status, started_at)
-  WHERE status = 'running';
+  ON mrp_runs (status, created_at, started_at);
 
 -- 6. Concurrent run prevention — satu MRP run aktif per tenant (FR-01)
 --
@@ -79,4 +78,3 @@ BEGIN
   END IF;
 END
 $$;
-

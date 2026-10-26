@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Kysely, sql } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
+import { getStockOnHand, lockStockKeys } from '../../../database/stock-lock';
 import { CreateStockOpnameDto, CompleteOpnameDto } from '../dto/inventory.dto';
 
 @Injectable()
@@ -183,35 +184,34 @@ export class StockOpnameService {
     dto: CompleteOpnameDto,
     completedBy: number,
   ) {
-    const opname = await db
-      .selectFrom('stock_opnames')
-      .where('id', '=', opnameId)
-      .select(['id', 'warehouse_id', 'status'])
-      .executeTakeFirst();
-
-    if (!opname) throw new NotFoundException('Stock opname tidak ditemukan');
-
-    if (opname.status !== 'counting') {
-      throw new ConflictException(
-        `Opname tidak bisa diselesaikan. Status saat ini: ${opname.status}`,
-      );
-    }
-
-    // Validasi semua item sudah diisi
-    const totalItems = await db
-      .selectFrom('stock_opname_items')
-      .where('opname_id', '=', opnameId)
-      .select(db.fn.countAll<number>().as('count'))
-      .executeTakeFirst();
-
-    if (dto.items.length !== Number(totalItems?.count ?? 0)) {
-      throw new BadRequestException(
-        `Jumlah item tidak sesuai. ` +
-          `Dibutuhkan: ${totalItems?.count}, diterima: ${dto.items.length}`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const opname = await trx
+        .selectFrom('stock_opnames')
+        .where('id', '=', opnameId)
+        .select(['id', 'warehouse_id', 'status'])
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!opname) throw new NotFoundException('Stock opname tidak ditemukan');
+      if (opname.status !== 'counting') {
+        throw new ConflictException(
+          `Opname tidak bisa diselesaikan. Status saat ini: ${opname.status}`,
+        );
+      }
+
+      const totalItems = await trx
+        .selectFrom('stock_opname_items')
+        .where('opname_id', '=', opnameId)
+        .select(trx.fn.countAll<number>().as('count'))
+        .executeTakeFirst();
+
+      if (dto.items.length !== Number(totalItems?.count ?? 0)) {
+        throw new BadRequestException(
+          `Jumlah item tidak sesuai. ` +
+            `Dibutuhkan: ${totalItems?.count}, diterima: ${dto.items.length}`,
+        );
+      }
+
       // Update actual quantities
       for (const item of dto.items) {
         await trx
@@ -265,9 +265,7 @@ export class StockOpnameService {
         .execute();
 
       // Refresh stock_summary setelah adjustment
-      await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(
-        trx,
-      );
+      await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(trx);
 
       this.logger.log(
         `Opname selesai: ${opnameId}, ` +
@@ -282,11 +280,7 @@ export class StockOpnameService {
   // CANCEL OPNAME
   // ----------------------------------------------------------------
 
-  async cancel(
-    db: Kysely<TenantSchema>,
-    opnameId: number,
-    cancelledBy: number,
-  ) {
+  async cancel(db: Kysely<TenantSchema>, opnameId: number) {
     const opname = await db
       .selectFrom('stock_opnames')
       .where('id', '=', opnameId)
@@ -301,11 +295,19 @@ export class StockOpnameService {
       );
     }
 
-    await db
+    const cancelled = await db
       .updateTable('stock_opnames')
       .set({ status: 'cancelled', updated_at: new Date() })
       .where('id', '=', opnameId)
-      .execute();
+      .where('status', 'in', ['draft', 'counting'])
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'Stock opname tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return { message: 'Stock opname berhasil dibatalkan' };
   }
@@ -343,6 +345,30 @@ export class StockOpnameService {
     // Pisahkan item surplus (adj in) dan kekurangan (adj out)
     const adjInItems = items.filter((i) => Number(i.difference) > 0);
     const adjOutItems = items.filter((i) => Number(i.difference) < 0);
+
+    await lockStockKeys(
+      db,
+      items.map((item) => ({
+        variantId: item.variant_id,
+        warehouseId,
+        batchId: item.batch_id,
+      })),
+    );
+
+    for (const item of adjOutItems) {
+      const available = await getStockOnHand(db, {
+        variantId: item.variant_id,
+        warehouseId,
+        batchId: item.batch_id,
+      });
+      const quantity = Math.abs(Number(item.difference));
+      if (available < quantity) {
+        throw new BadRequestException(
+          `Stok opname akan menghasilkan stok negatif untuk variant ${item.variant_id}. ` +
+            `Tersedia: ${available}, penyesuaian: ${quantity}`,
+        );
+      }
+    }
 
     // Ambil movement type IDs
     const [adjInType, adjOutType] = await Promise.all([

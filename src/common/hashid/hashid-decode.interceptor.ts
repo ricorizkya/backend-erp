@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
 import { HashIdService } from './hashid.service';
 import { HASH_SALT_KEY, SKIP_HASHID_KEY } from './hashid.constants';
 
@@ -33,8 +34,10 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
-    const salt = request[HASH_SALT_KEY] as string | undefined;
+    const request = context
+      .switchToHttp()
+      .getRequest<FastifyRequest & { [HASH_SALT_KEY]?: string }>();
+    const salt = request[HASH_SALT_KEY];
 
     if (!salt) {
       return next.handle();
@@ -43,7 +46,7 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
     if (request.body && typeof request.body === 'object') {
       try {
         request.body = this.decodeObject(request.body, salt);
-      } catch (e) {
+      } catch {
         throw new BadRequestException('Invalid hash ID in request body');
       }
     }
@@ -51,7 +54,7 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
     if (request.query && typeof request.query === 'object') {
       try {
         request.query = this.decodeObject(request.query, salt);
-      } catch (e) {
+      } catch {
         throw new BadRequestException('Invalid hash ID in request query');
       }
     }
@@ -59,15 +62,16 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
     if (request.params && typeof request.params === 'object') {
       try {
         request.params = this.decodeObject(request.params, salt);
-      } catch (e: any) {
-        throw new BadRequestException(`Params decode error: ${e.message || e}`);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new BadRequestException(`Params decode error: ${message}`);
       }
     }
 
     return next.handle();
   }
 
-  private decodeObject(data: any, salt: string): any {
+  private decodeObject(data: unknown, salt: string): unknown {
     if (data === null || data === undefined) return data;
 
     if (Array.isArray(data)) {
@@ -76,7 +80,9 @@ export class HashIdDecodeInterceptor implements NestInterceptor {
 
     if (typeof data === 'object' && data !== null) {
       const result: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(data)) {
+      for (const [key, value] of Object.entries(
+        data as Record<string, unknown>,
+      )) {
         if (
           this.isIdField(key) &&
           typeof value === 'string' &&

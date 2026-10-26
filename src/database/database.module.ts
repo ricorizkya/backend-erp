@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { DatabaseService } from './database.service';
 import { MigrationService } from './migration.service';
+import { BootstrapAdminService } from './bootstrap-admin.service';
 
 @Global()
 @Module({
@@ -27,7 +28,8 @@ import { MigrationService } from './migration.service';
     },
     DatabaseService,
     MigrationService,
+    BootstrapAdminService,
   ],
-  exports: [DatabaseService, MigrationService],
+  exports: [Pool, DatabaseService, MigrationService],
 })
 export class DatabaseModule {}

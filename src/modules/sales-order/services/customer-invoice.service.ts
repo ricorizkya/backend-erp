@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, sql } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateCustomerInvoiceDto,
@@ -15,6 +15,33 @@ import { DocumentNumberService } from '../../../common/document-number.service';
 import { ArService } from '../../accounting/services/ar.service';
 import { JournalEntryService } from '../../accounting/services/journal-entry.service';
 import { AccountService } from '../../accounting/services/account.service';
+import { JournalEntryType } from '../../accounting/dto/accounting.dto';
+
+export interface DeliveryInvoiceLine {
+  quantity: number;
+  unitPrice: number;
+  discountPct?: number | null;
+  taxPct?: number | null;
+}
+
+export function calculateDeliveryInvoiceTotals(
+  lines: readonly DeliveryInvoiceLine[],
+) {
+  const round4 = (value: number) => Math.round(value * 10000) / 10000;
+  let subtotal = 0;
+  let taxAmount = 0;
+  for (const line of lines) {
+    const gross = round4(line.quantity * line.unitPrice);
+    const discounted = round4(
+      gross * (1 - Number(line.discountPct ?? 0) / 100),
+    );
+    subtotal = round4(subtotal + discounted);
+    taxAmount = round4(
+      taxAmount + discounted * (Number(line.taxPct ?? 0) / 100),
+    );
+  }
+  return { subtotal, taxAmount, totalAmount: round4(subtotal + taxAmount) };
+}
 
 @Injectable()
 export class CustomerInvoiceService {
@@ -158,54 +185,76 @@ export class CustomerInvoiceService {
     dto: CreateCustomerInvoiceDto,
     createdBy: number,
   ) {
-    const so = await db
-      .selectFrom('sales_orders')
-      .where('id', '=', dto.soId)
-      .where('status', 'in', ['confirmed', 'partial', 'delivered'])
-      .select(['id', 'customer_id', 'total_amount', 'tax_amount', 'subtotal'])
-      .executeTakeFirst();
-
-    if (!so) {
-      throw new NotFoundException(
-        'Sales Order tidak ditemukan atau belum ada pengiriman',
-      );
-    }
-
     if (!dto.doIds.length) {
       throw new BadRequestException('Minimal satu Delivery Order diperlukan');
     }
 
-    // Validasi DO confirmed dan milik SO ini
-    const dos = await db
-      .selectFrom('delivery_orders')
-      .where('id', 'in', dto.doIds)
-      .where('so_id', '=', dto.soId)
-      .where('status', '=', 'confirmed')
-      .select('id')
-      .execute();
-
-    if (dos.length !== dto.doIds.length) {
-      throw new BadRequestException(
-        'Satu atau lebih DO tidak valid atau belum dikonfirmasi',
-      );
-    }
-
-    // Cek DO belum di-invoice
-    const alreadyInvoiced = await db
-      .selectFrom('customer_invoice_deliveries as cid')
-      .innerJoin('customer_invoices as ci', 'ci.id', 'cid.invoice_id')
-      .where('cid.do_id', 'in', dto.doIds)
-      .where('ci.status', '!=', 'cancelled')
-      .select('cid.do_id')
-      .executeTakeFirst();
-
-    if (alreadyInvoiced) {
-      throw new ConflictException(
-        `DO ${alreadyInvoiced.do_id} sudah ada di invoice lain`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const so = await trx
+        .selectFrom('sales_orders')
+        .where('id', '=', dto.soId)
+        .where('status', 'in', ['confirmed', 'partial', 'delivered'])
+        .select(['id', 'customer_id'])
+        .forUpdate()
+        .executeTakeFirst();
+      if (!so) {
+        throw new NotFoundException(
+          'Sales Order tidak ditemukan atau belum ada pengiriman',
+        );
+      }
+
+      const uniqueDoIds = [...new Set(dto.doIds)].sort((a, b) => a - b);
+      const dos = await trx
+        .selectFrom('delivery_orders')
+        .where('id', 'in', uniqueDoIds)
+        .where('so_id', '=', dto.soId)
+        .where('status', '=', 'confirmed')
+        .select(['id'])
+        .orderBy('id')
+        .forUpdate()
+        .execute();
+      if (dos.length !== uniqueDoIds.length) {
+        throw new BadRequestException(
+          'Satu atau lebih DO tidak valid atau belum dikonfirmasi',
+        );
+      }
+
+      const alreadyInvoiced = await trx
+        .selectFrom('customer_invoice_deliveries as cid')
+        .innerJoin('customer_invoices as ci', 'ci.id', 'cid.invoice_id')
+        .where('cid.do_id', 'in', uniqueDoIds)
+        .where('ci.status', '!=', 'cancelled')
+        .select('cid.do_id')
+        .executeTakeFirst();
+      if (alreadyInvoiced) {
+        throw new ConflictException(
+          `DO ${alreadyInvoiced.do_id} sudah ada di invoice lain`,
+        );
+      }
+
+      const items = await trx
+        .selectFrom('delivery_order_items as doi')
+        .innerJoin('sales_order_items as soi', 'soi.id', 'doi.so_item_id')
+        .where('doi.do_id', 'in', uniqueDoIds)
+        .select([
+          'doi.do_id',
+          'doi.quantity_delivered',
+          'soi.unit_price',
+          'soi.discount_pct',
+          'soi.tax_pct',
+        ])
+        .execute();
+
+      const totals = calculateDeliveryInvoiceTotals(
+        items.map((item) => ({
+          quantity: Number(item.quantity_delivered),
+          unitPrice: Number(item.unit_price),
+          discountPct: Number(item.discount_pct ?? 0),
+          taxPct: Number(item.tax_pct ?? 0),
+        })),
+      );
+      const { subtotal, taxAmount, totalAmount } = totals;
+
       const number = await this.docNumber.generate(trx, 'INV');
 
       const [invoice] = await trx
@@ -217,9 +266,9 @@ export class CustomerInvoiceService {
           invoice_date: new Date(dto.invoiceDate),
           due_date: new Date(dto.dueDate),
           status: 'unpaid',
-          subtotal: Number(so.subtotal),
-          tax_amount: Number(so.tax_amount),
-          total_amount: Number(so.total_amount),
+          subtotal,
+          tax_amount: taxAmount,
+          total_amount: totalAmount,
           paid_amount: 0,
           notes: dto.notes ?? null,
           created_by: createdBy,
@@ -231,17 +280,51 @@ export class CustomerInvoiceService {
       await trx
         .insertInto('customer_invoice_deliveries')
         .values(
-          dto.doIds.map((doId) => ({
+          uniqueDoIds.map((doId) => ({
             invoice_id: invoice.id,
             do_id: doId,
           })),
         )
         .execute();
 
-      // Update SO status ke invoiced
+      const soItems = await trx
+        .selectFrom('sales_order_items')
+        .where('so_id', '=', dto.soId)
+        .select(['id', 'quantity_delivered'])
+        .execute();
+      const invoicedQuantities = await trx
+        .selectFrom('delivery_order_items as doi')
+        .innerJoin(
+          'customer_invoice_deliveries as cid',
+          'cid.do_id',
+          'doi.do_id',
+        )
+        .innerJoin('customer_invoices as ci', 'ci.id', 'cid.invoice_id')
+        .where('ci.status', '!=', 'cancelled')
+        .innerJoin('sales_order_items as soi', 'soi.id', 'doi.so_item_id')
+        .where('soi.so_id', '=', dto.soId)
+        .select([
+          'doi.so_item_id',
+          sql<number>`SUM(doi.quantity_delivered)`.as('quantity'),
+        ])
+        .groupBy('doi.so_item_id')
+        .execute();
+      const invoicedByItem = new Map(
+        invoicedQuantities.map((row) => [row.so_item_id, Number(row.quantity)]),
+      );
+      const fullyInvoiced = soItems.every(
+        (item) =>
+          Number(invoicedByItem.get(item.id) ?? 0) >=
+          Number(item.quantity_delivered),
+      );
+
+      // Update SO status berdasarkan delivered quantity yang sudah diinvoicing
       await trx
         .updateTable('sales_orders')
-        .set({ status: 'invoiced', updated_at: new Date() })
+        .set({
+          status: fullyInvoiced ? 'invoiced' : 'partial',
+          updated_at: new Date(),
+        })
         .where('id', '=', dto.soId)
         .execute();
 
@@ -250,7 +333,7 @@ export class CustomerInvoiceService {
         trx,
         invoice.id,
         so.customer_id,
-        Number(so.total_amount),
+        totalAmount,
         new Date(dto.invoiceDate),
         new Date(dto.dueDate),
       );
@@ -261,10 +344,6 @@ export class CustomerInvoiceService {
         trx,
         'revenue',
       );
-      const taxAmount = Number(so.tax_amount);
-      const subtotal = Number(so.subtotal);
-      const totalAmount = Number(so.total_amount);
-
       const lines = [
         {
           accountId: arAccount.id,
@@ -300,7 +379,7 @@ export class CustomerInvoiceService {
         trx,
         {
           entryDate: new Date(dto.invoiceDate).toISOString(),
-          entryType: 'sales' as any,
+          entryType: JournalEntryType.SALES,
           description: `Faktur Penjualan - ${invoice.number}`,
           folio: invoice.number,
           referenceType: 'customer_invoice',
@@ -508,6 +587,15 @@ export class PaymentReceiptService {
       throw new BadRequestException('Minimal satu alokasi invoice diperlukan');
     }
 
+    const invoiceIds = dto.allocations
+      .map((allocation) => allocation.invoiceId)
+      .sort((a, b) => a - b);
+    if (new Set(invoiceIds).size !== invoiceIds.length) {
+      throw new BadRequestException(
+        'Satu invoice hanya boleh muncul sekali dalam alokasi pembayaran',
+      );
+    }
+
     // Validasi total alokasi = amount payment
     const paymentAmount = dto.allocations.reduce((s, a) => s + a.amount, 0);
 
@@ -537,6 +625,35 @@ export class PaymentReceiptService {
     }
 
     return db.transaction().execute(async (trx) => {
+      const lockedInvoices = await trx
+        .selectFrom('customer_invoices')
+        .where('id', 'in', invoiceIds)
+        .where('customer_id', '=', dto.customerId)
+        .where('status', 'in', ['unpaid', 'partial'])
+        .select(['id', 'outstanding_amount'])
+        .orderBy('id')
+        .forUpdate()
+        .execute();
+      const invoiceById = new Map(
+        lockedInvoices.map((invoice) => [invoice.id, invoice]),
+      );
+
+      for (const allocation of dto.allocations) {
+        const invoice = invoiceById.get(allocation.invoiceId);
+        if (!invoice) {
+          throw new NotFoundException(
+            `Invoice ${allocation.invoiceId} tidak ditemukan atau sudah lunas`,
+          );
+        }
+        const outstanding = Number(invoice.outstanding_amount ?? 0);
+        if (allocation.amount > outstanding + 0.01) {
+          throw new BadRequestException(
+            `Alokasi untuk invoice ${allocation.invoiceId} melebihi outstanding. ` +
+              `Outstanding: ${outstanding}, dialokasikan: ${allocation.amount}`,
+          );
+        }
+      }
+
       const number = await this.docNumber.generate(trx, 'PAY');
 
       const [payment] = await trx
@@ -598,7 +715,7 @@ export class PaymentReceiptService {
             ? new Date(dto.paymentDate)
             : new Date()
           ).toISOString(),
-          entryType: 'payment' as any,
+          entryType: JournalEntryType.PAYMENT,
           description: `Penerimaan Pembayaran - ${payment.number}`,
           folio: payment.number,
           referenceType: 'payment_receipt',

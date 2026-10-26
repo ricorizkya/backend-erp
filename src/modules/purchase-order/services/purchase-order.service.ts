@@ -4,7 +4,8 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, type ReferenceExpression } from 'kysely';
+import { executeInTransaction } from '../../../database/transaction';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreatePurchaseOrderDto,
@@ -181,7 +182,7 @@ export class PurchaseOrderService {
       throw new BadRequestException('Minimal satu item diperlukan');
     }
 
-    return db.transaction().execute(async (trx) => {
+    return executeInTransaction(db, async (trx) => {
       const number = await this.docNumber.generate(trx, 'PO');
 
       // Hitung totals
@@ -257,7 +258,7 @@ export class PurchaseOrderService {
       throw new ConflictException('Hanya PO berstatus draft yang bisa diubah');
     }
 
-    return db.transaction().execute(async (trx) => {
+    return executeInTransaction(db, async (trx) => {
       // Update items jika ada
       if (dto.items?.length) {
         for (const item of dto.items) {
@@ -340,14 +341,6 @@ export class PurchaseOrderService {
   // ----------------------------------------------------------------
 
   async confirm(db: Kysely<TenantSchema>, poId: number, confirmedBy: number) {
-    const po = await this.getPoOrThrow(db, poId);
-
-    if (po.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya PO berstatus draft yang bisa dikonfirmasi. Status: ${po.status}`,
-      );
-    }
-
     const [updated] = await db
       .updateTable('purchase_orders')
       .set({
@@ -357,8 +350,16 @@ export class PurchaseOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', poId)
+      .where('status', '=', 'draft')
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const po = await this.getPoOrThrow(db, poId);
+      throw new ConflictException(
+        `Hanya PO berstatus draft yang bisa dikonfirmasi. Status: ${po.status}`,
+      );
+    }
 
     return updated;
   }
@@ -391,8 +392,16 @@ export class PurchaseOrderService {
         updated_at: new Date(),
       })
       .where('id', '=', poId)
+      .where('status', 'in', ['draft', 'confirmed'])
       .returningAll()
       .execute();
+
+    if (!updated) {
+      const current = await this.getPoOrThrow(db, poId);
+      throw new ConflictException(
+        `PO berstatus ${current.status} tidak bisa dibatalkan`,
+      );
+    }
 
     return updated;
   }
@@ -411,7 +420,14 @@ export class PurchaseOrderService {
       .groupBy('gri.po_item_id')
       .select([
         'gri.po_item_id',
-        db.fn.sum<number>('gri.quantity_received' as any).as('total_received'),
+        db.fn
+          .sum<number>(
+            'gri.quantity_received' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('total_received'),
       ])
       .execute();
 

@@ -24,7 +24,12 @@ import { CommonModule } from './common/common.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
+      envFilePath: [
+        `.env.${process.env.NODE_ENV}.local`,
+        `.env.${process.env.NODE_ENV}`,
+        '.env.local',
+        '.env',
+      ],
     }),
     ScheduleModule.forRoot(),
     RedisModule.forRootAsync({
@@ -50,9 +55,13 @@ import { CommonModule } from './common/common.module';
                 port: parseInt(parsed.port || '6379', 10),
                 password: parsed.password || undefined,
                 username: parsed.username || undefined,
+                db:
+                  parsed.pathname.length > 1
+                    ? Number(parsed.pathname.slice(1))
+                    : undefined,
               },
             };
-          } catch (e) {
+          } catch {
             // fallback
           }
         }

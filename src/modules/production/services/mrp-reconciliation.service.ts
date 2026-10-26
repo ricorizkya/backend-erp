@@ -2,8 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { Pool } from 'pg';
 import { DatabaseService } from '../../../database/database.service';
+import { TenantSchema } from '../../../types/database.types';
+import { Kysely } from 'kysely';
+
+type MrpRun = {
+  id: number;
+  status:
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'failed_permanent'
+    | 'cancelled';
+  retry_count: number;
+  started_at: Date | null;
+  plan_from: Date;
+  plan_to: Date;
+  job_schema_version: number;
+  triggered_by: number;
+};
 
 @Injectable()
 export class MrpReconciliationService {
@@ -11,146 +29,163 @@ export class MrpReconciliationService {
 
   constructor(
     @InjectQueue('mrp-calculation') private readonly mrpQueue: Queue,
-    private readonly pool: Pool,
     private readonly databaseService: DatabaseService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
-  async reconcileStuckJobs() {
+  async reconcileStuckJobs(): Promise<void> {
     try {
-      // Ambil semua tenant aktif
-      const tenantsResult = await this.pool.query<{ code: string }>(
-        `SELECT code FROM public.tenants WHERE is_active = true`,
-      );
+      const tenants = await this.databaseService
+        .getPublicDb()
+        .selectFrom('tenants')
+        .select('code')
+        .where('is_active', '=', true)
+        .execute();
 
-      for (const { code } of tenantsResult.rows) {
+      for (const { code } of tenants) {
         const { db, release } = await this.databaseService.getTenantDb(code);
         try {
-          // Cari run yang stuck di 'running' lebih dari 5 menit
-          const stuckRuns = await db
-            .selectFrom('mrp_runs')
-            .where('status', '=', 'running')
-            .where(
-              'started_at',
-              '<',
-              new Date(Date.now() - 5 * 60 * 1000), // 5 menit lalu
-            )
-            .selectAll()
-            .execute();
-
-          for (const run of stuckRuns) {
-            const runId = Number(run.id);
-
-            // Cek status job di BullMQ — simpan referensi existingJob di
-            // outer scope supaya bisa di-remove sebelum push ulang di bawah.
-            let isActiveInQueue = false;
-            let existingJob: Awaited<ReturnType<Queue['getJob']>> | undefined;
-            try {
-              existingJob = await this.mrpQueue.getJob(runId.toString());
-              if (existingJob) {
-                isActiveInQueue = await existingJob.isActive();
-              }
-            } catch (e: unknown) {
-              const errMsg = e instanceof Error ? e.message : String(e);
-              this.logger.warn(
-                `Failed to check BullMQ job status for runId=${runId}: ${errMsg}`,
-              );
-            }
-
-            if (isActiveInQueue) {
-              this.logger.log(
-                `MRP runId=${runId} is still actively processing in worker. Skipping reconciliation.`,
-              );
-              continue;
-            }
-
-            const currentRetries = Number(run.retry_count ?? 0);
-
-            if (currentRetries < 3) {
-              this.logger.warn(
-                `Reconciling stuck MRP runId=${runId} on tenant=${code}. Retrying (attempt ${currentRetries + 1}/3)...`,
-              );
-
-              await db
-                .updateTable('mrp_runs')
-                .set({
-                  status: 'pending',
-                  retry_count: currentRetries + 1,
-                  started_at: null,
-                  error_message: `Stuck job detected. Retry attempt ${currentRetries + 1}`,
-                })
-                .where('id', '=', runId)
-                .execute();
-
-              try {
-                // WAJIB: hapus job lama dulu sebelum push ulang dengan jobId
-                // yang sama. BullMQ dedupe berdasarkan jobId — karena
-                // removeOnComplete/removeOnFail di-set false (untuk audit),
-                // job lama yang sudah 'failed' akan tetap ada di Redis.
-                // Tanpa remove() ini, add() dengan jobId sama TIDAK akan
-                // membuat job baru yang bisa diambil worker dari status
-                // 'waiting' — retry jadi silent no-op. Audit trail tetap
-                // aman karena retry_count & error_message sudah tercatat
-                // di mrp_runs (Postgres), tidak bergantung pada BullMQ
-                // menyimpan job lama.
-                if (existingJob) {
-                  await existingJob.remove();
-                }
-
-                await this.mrpQueue.add(
-                  'mrp-calculation',
-                  {
-                    schemaVersion: 1,
-                    runId,
-                    tenantSchema: `tenant_${code}`,
-                    planFrom: run.plan_from.toISOString().split('T')[0],
-                    planTo: run.plan_to.toISOString().split('T')[0],
-                    triggeredBy: Number(run.triggered_by),
-                  },
-                  {
-                    jobId: runId.toString(),
-                    attempts: 1,
-                    removeOnComplete: false,
-                    removeOnFail: false,
-                  },
-                );
-              } catch (queueErr: unknown) {
-                const qMsg =
-                  queueErr instanceof Error
-                    ? queueErr.message
-                    : String(queueErr);
-                this.logger.error(
-                  `Failed to re-queue MRP runId=${runId}: ${qMsg}`,
-                );
-              }
-            } else {
-              this.logger.error(
-                `MRP runId=${runId} on tenant=${code} failed permanently after 3 retry attempts.`,
-              );
-
-              await db
-                .updateTable('mrp_runs')
-                .set({
-                  status: 'failed_permanent',
-                  completed_at: new Date(),
-                  error_message:
-                    'Job stuck and exceeded maximum retry limit (3 attempts)',
-                })
-                .where('id', '=', runId)
-                .execute();
-            }
-          }
+          await this.reconcileTenant(db, code);
         } finally {
-          release();
+          await release();
         }
       }
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      const stack = err instanceof Error ? err.stack : undefined;
-      this.logger.error(
-        `Error during MRP reconciliation cron: ${errMsg}`,
-        stack,
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error during MRP reconciliation cron: ${message}`);
     }
+  }
+
+  private async reconcileTenant(
+    db: Kysely<TenantSchema>,
+    tenantCode: string,
+  ): Promise<void> {
+    const pending = await db
+      .selectFrom('mrp_runs')
+      .where('status', '=', 'pending')
+      .where('created_at', '<', new Date(Date.now() - 30_000))
+      .selectAll()
+      .execute();
+    for (const run of pending) await this.ensureQueued(tenantCode, run);
+
+    const failed = await db
+      .selectFrom('mrp_runs')
+      .where('status', '=', 'failed')
+      .where('retry_count', '<', 3)
+      .selectAll()
+      .execute();
+    for (const run of failed) {
+      const retry = Number(run.retry_count) + 1;
+      const updated = await db
+        .updateTable('mrp_runs')
+        .set({
+          status: 'pending',
+          retry_count: retry,
+          error_message: `Retry attempt ${retry}`,
+        })
+        .where('id', '=', run.id)
+        .where('status', '=', 'failed')
+        .executeTakeFirst();
+      if (Number(updated.numUpdatedRows) === 1) {
+        await this.ensureQueued(tenantCode, {
+          ...run,
+          status: 'pending',
+          retry_count: retry,
+        });
+      }
+    }
+
+    await db
+      .updateTable('mrp_runs')
+      .set({
+        status: 'failed_permanent',
+        completed_at: new Date(),
+        error_message: 'Retry limit exceeded',
+      })
+      .where('status', '=', 'failed')
+      .where('retry_count', '>=', 3)
+      .execute();
+
+    const stuck = await db
+      .selectFrom('mrp_runs')
+      .where('status', '=', 'running')
+      .where('started_at', '<', new Date(Date.now() - 5 * 60_000))
+      .selectAll()
+      .execute();
+    for (const run of stuck) {
+      const job = await this.mrpQueue.getJob(`mrp-run-${run.id}`);
+      if (job && (await job.isActive())) {
+        this.triggerAlert(tenantCode, Number(run.id), {
+          startedAt: run.started_at,
+        });
+        continue;
+      }
+      const retry = Number(run.retry_count) + 1;
+      const updated = await db
+        .updateTable('mrp_runs')
+        .set(
+          retry <= 3
+            ? {
+                status: 'pending',
+                retry_count: retry,
+                started_at: null,
+                error_message: `Stuck job retry ${retry}`,
+              }
+            : {
+                status: 'failed_permanent',
+                completed_at: new Date(),
+                error_message: 'Stuck job exceeded retry limit',
+              },
+        )
+        .where('id', '=', run.id)
+        .where('status', '=', 'running')
+        .executeTakeFirst();
+      if (Number(updated.numUpdatedRows) === 1 && retry <= 3) {
+        await this.ensureQueued(tenantCode, {
+          ...run,
+          status: 'pending',
+          retry_count: retry,
+          started_at: null,
+        });
+      }
+    }
+  }
+
+  private async ensureQueued(tenantCode: string, run: MrpRun): Promise<void> {
+    const jobId = `mrp-run-${run.id}`;
+    try {
+      const existing = await this.mrpQueue.getJob(jobId);
+      if (existing) {
+        const state = await existing.getState();
+        if (state === 'waiting' || state === 'delayed' || state === 'active')
+          return;
+        await existing.remove();
+      }
+      await this.mrpQueue.add(
+        'mrp-calculation',
+        {
+          schemaVersion: Number(run.job_schema_version),
+          runId: Number(run.id),
+          tenantSchema: `tenant_${tenantCode}`,
+          planFrom: new Date(run.plan_from).toISOString(),
+          planTo: new Date(run.plan_to).toISOString(),
+          triggeredBy: Number(run.triggered_by),
+        },
+        { jobId, attempts: 1, removeOnComplete: false, removeOnFail: false },
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Could not enqueue MRP run ${run.id}: ${message}`);
+    }
+  }
+
+  private triggerAlert(
+    tenant: string,
+    runId: number,
+    details: Record<string, unknown>,
+  ): void {
+    this.logger.error(
+      `[CRITICAL_ALERT:LONG_RUNNING] MRP Run #${runId} on tenant=${tenant}: ${JSON.stringify(details)}`,
+    );
   }
 }

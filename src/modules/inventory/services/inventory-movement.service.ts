@@ -11,6 +11,7 @@ import {
   CreateInventoryMovementDto,
   MovementFilterDto,
 } from '../dto/inventory.dto';
+import { getStockOnHand, lockStockKeys } from '../../../database/stock-lock';
 
 @Injectable()
 export class InventoryMovementService {
@@ -248,32 +249,32 @@ export class InventoryMovementService {
     movementId: number,
     confirmedBy: number,
   ) {
-    const movement = await db
-      .selectFrom('inventory_movements as im')
-      .innerJoin(
-        'inventory_movement_types as imt',
-        'imt.id',
-        'im.movement_type_id',
-      )
-      .where('im.id', '=', movementId)
-      .select(['im.id', 'im.status', 'imt.direction', 'imt.code'])
-      .executeTakeFirst();
-
-    if (!movement) {
-      throw new NotFoundException('Transaksi inventory tidak ditemukan');
-    }
-    if (movement.status !== 'draft') {
-      throw new ConflictException(
-        `Hanya movement berstatus draft yang bisa dikonfirmasi. Status saat ini: ${movement.status}`,
-      );
-    }
-
-    // Kalau direction 'out' atau 'transfer' — validasi stok mencukupi
-    if (movement.direction === 'out' || movement.direction === 'transfer') {
-      await this.validateSufficientStock(db, movementId);
-    }
-
     return db.transaction().execute(async (trx) => {
+      const movement = await trx
+        .selectFrom('inventory_movements as im')
+        .innerJoin(
+          'inventory_movement_types as imt',
+          'imt.id',
+          'im.movement_type_id',
+        )
+        .where('im.id', '=', movementId)
+        .select(['im.id', 'im.status', 'imt.direction', 'imt.code'])
+        .forUpdate('im')
+        .executeTakeFirst();
+
+      if (!movement) {
+        throw new NotFoundException('Transaksi inventory tidak ditemukan');
+      }
+      if (movement.status !== 'draft') {
+        throw new ConflictException(
+          `Hanya movement berstatus draft yang bisa dikonfirmasi. Status saat ini: ${movement.status}`,
+        );
+      }
+
+      if (movement.direction === 'out' || movement.direction === 'transfer') {
+        await this.validateSufficientStock(trx, movementId);
+      }
+
       // Update status ke confirmed
       await trx
         .updateTable('inventory_movements')
@@ -333,8 +334,15 @@ export class InventoryMovementService {
         updated_at: new Date(),
       })
       .where('id', '=', movementId)
+      .where('status', 'not in', ['confirmed', 'cancelled'])
       .returningAll()
       .execute();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'Movement tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return cancelled;
   }
@@ -419,35 +427,48 @@ export class InventoryMovementService {
       ])
       .execute();
 
+    const requirements = new Map<
+      string,
+      {
+        variantId: number;
+        warehouseId: number;
+        batchId: number | null;
+        quantity: number;
+        sku: string;
+      }
+    >();
     for (const item of items) {
       if (!item.from_warehouse_id) continue;
+      const key = `${item.variant_id}:${item.from_warehouse_id}:${item.batch_id ?? 0}`;
+      const existing = requirements.get(key);
+      if (existing) {
+        existing.quantity += Number(item.quantity);
+      } else {
+        requirements.set(key, {
+          variantId: item.variant_id,
+          warehouseId: item.from_warehouse_id,
+          batchId: item.batch_id,
+          quantity: Number(item.quantity),
+          sku: item.sku,
+        });
+      }
+    }
 
-      // Query stock dari materialized view
-      const stockRow = await db
-        .selectFrom('stock_summary')
-        .where('variant_id', '=', item.variant_id)
-        .where('warehouse_id', '=', item.from_warehouse_id)
-        .where((eb) =>
-          item.batch_id
-            ? eb('batch_id', '=', item.batch_id)
-            : eb('batch_id', 'is', null),
-        )
-        .select('quantity_on_hand')
-        .executeTakeFirst();
+    await lockStockKeys(db, [...requirements.values()]);
 
-      const onHand = Number(stockRow?.quantity_on_hand ?? 0);
+    for (const requirement of requirements.values()) {
+      const onHand = await getStockOnHand(db, requirement);
 
-      if (onHand < item.quantity) {
+      if (onHand < requirement.quantity) {
         throw new BadRequestException(
-          `Stok tidak mencukupi untuk SKU "${item.sku}". ` +
-            `Tersedia: ${onHand}, dibutuhkan: ${item.quantity}`,
+          `Stok tidak mencukupi untuk SKU "${requirement.sku}". ` +
+            `Tersedia: ${onHand}, dibutuhkan: ${requirement.quantity}`,
         );
       }
     }
   }
 
   private async refreshStockSummary(db: Kysely<TenantSchema>) {
-    // CONCURRENTLY: tidak block query lain saat refresh berlangsung
-    await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY stock_summary`.execute(db);
+    await sql`REFRESH MATERIALIZED VIEW stock_summary`.execute(db);
   }
 }

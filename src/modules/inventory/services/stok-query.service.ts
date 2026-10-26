@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, type ReferenceExpression } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import { StockQueryDto, StockHistoryDto } from '../dto/inventory.dto';
 
@@ -239,7 +239,14 @@ export class StockQueryService {
         'wl.code as location_code',
         'wl.name as location_name',
         'b.batch_number',
-        db.fn.sum<number>('imi.quantity' as any).as('quantity'),
+        db.fn
+          .sum<number>(
+            'imi.quantity' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('quantity'),
       ])
       .orderBy('wl.code', 'asc')
       .orderBy('p.name', 'asc')
@@ -282,11 +289,18 @@ export class StockQueryService {
     let stockQuery = db
       .selectFrom('stock_summary as ss')
       .innerJoin('warehouses as w', 'w.id', 'ss.warehouse_id')
-      .where('ss.variant_id', 'in', variantIds as any)
+      .where('ss.variant_id', 'in', variantIds)
       .groupBy(['ss.variant_id'])
       .select([
         'ss.variant_id',
-        db.fn.sum<number>('ss.quantity_on_hand' as any).as('total_stock'),
+        db.fn
+          .sum<number>(
+            'ss.quantity_on_hand' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('total_stock'),
       ]);
 
     if (warehouseId) {

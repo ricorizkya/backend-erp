@@ -12,7 +12,7 @@ CREATE INDEX idx_tenants_code ON tenants(code);
 CREATE INDEX idx_tenants_is_active ON tenants(is_active);
 CREATE TABLE IF NOT EXISTS tenant_secrets (
     tenant_id   BIGINT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
-    hash_salt   VARCHAR(50) NOT NULL,
+    hash_salt   VARCHAR(64) NOT NULL,
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
