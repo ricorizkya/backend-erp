@@ -262,8 +262,9 @@ export class ProductionController {
   cancelMrpRun(
     @TenantDb() db: Kysely<TenantSchema>,
     @Param('id', HashIdPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.mrpRunService.cancel(db, id);
+    return this.mrpRunService.cancel(db, id, user.tenantCode);
   }
 
   @Post('mrp-runs/:id/approve-all')

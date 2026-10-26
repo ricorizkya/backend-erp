@@ -4,7 +4,7 @@ Target akhir: mempertahankan arsitektur NestJS + PostgreSQL + BullMQ + worker Go
 - Tidak menambah ORM, repository layer, event framework, atau dependency runtime baru.
 - PostgreSQL tetap menjadi sumber kebenaran untuk status dokumen dan MRP.
 - Gunakan SELECT ... FOR UPDATE, conditional update, constraint database, dan transaction-level advisory lock.
-- BullMQ tetap memakai jobId = mrp-run-${runId}.
+- BullMQ memakai jobId tenant-scoped = mrp-${tenantCode}-run-${runId}; sequence ID tenant tidak global.
 - Tidak menambah outbox pada tahap ini. Cron reconciliation menjadi mekanisme pemulihan enqueue.
 - Harga pokok v1 menggunakan product_variants.cost_price; production cost sheet lengkap tetap di luar scope poin 1–10.
 - Migration lama hanya diedit untuk menghapus secret. Perubahan schema fungsional baru masuk migration 014.

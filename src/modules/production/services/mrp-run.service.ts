@@ -109,7 +109,7 @@ export class MrpRunService {
           triggeredBy: Number(triggeredBy),
         },
         {
-          jobId: `mrp-run-${runId}`,
+          jobId: this.jobId(tenantCode, runId),
           attempts: 1, // Retry dimatikan di BullMQ — di-handle oleh reconciliation service
           removeOnComplete: false,
           removeOnFail: false,
@@ -236,7 +236,7 @@ export class MrpRunService {
   // CANCEL MRP RUN
   // ----------------------------------------------------------------
 
-  async cancel(db: Kysely<TenantSchema>, runId: number) {
+  async cancel(db: Kysely<TenantSchema>, runId: number, tenantCode: string) {
     const result = await db
       .updateTable('mrp_runs')
       .set({
@@ -262,7 +262,7 @@ export class MrpRunService {
 
     // Hapus dari BullMQ jika masih di queue
     try {
-      const job = await this.mrpQueue.getJob(`mrp-run-${runId}`);
+      const job = await this.mrpQueue.getJob(this.jobId(tenantCode, runId));
       if (job) {
         await job.remove();
       }
@@ -271,5 +271,9 @@ export class MrpRunService {
     }
 
     return { message: `MRP Run #${runId} berhasil dibatalkan` };
+  }
+
+  private jobId(tenantCode: string, runId: number): string {
+    return `mrp-${tenantCode}-run-${runId}`;
   }
 }

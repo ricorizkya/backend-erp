@@ -113,7 +113,9 @@ export class MrpReconciliationService {
       .selectAll()
       .execute();
     for (const run of stuck) {
-      const job = await this.mrpQueue.getJob(`mrp-run-${run.id}`);
+      const job = await this.mrpQueue.getJob(
+        this.jobId(tenantCode, Number(run.id)),
+      );
       if (job && (await job.isActive())) {
         this.triggerAlert(tenantCode, Number(run.id), {
           startedAt: run.started_at,
@@ -152,7 +154,7 @@ export class MrpReconciliationService {
   }
 
   private async ensureQueued(tenantCode: string, run: MrpRun): Promise<void> {
-    const jobId = `mrp-run-${run.id}`;
+    const jobId = this.jobId(tenantCode, Number(run.id));
     try {
       const existing = await this.mrpQueue.getJob(jobId);
       if (existing) {
@@ -187,5 +189,9 @@ export class MrpReconciliationService {
     this.logger.error(
       `[CRITICAL_ALERT:LONG_RUNNING] MRP Run #${runId} on tenant=${tenant}: ${JSON.stringify(details)}`,
     );
+  }
+
+  private jobId(tenantCode: string, runId: number): string {
+    return `mrp-${tenantCode}-run-${runId}`;
   }
 }

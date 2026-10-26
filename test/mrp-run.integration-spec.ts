@@ -144,11 +144,11 @@ describe('MRP run workflow against PostgreSQL', () => {
         'test_mrp_run',
       );
       await expect(
-        service.cancel(tenant.db, created.runId),
+        service.cancel(tenant.db, created.runId, 'test_mrp_run'),
       ).resolves.toBeDefined();
-      await expect(service.cancel(tenant.db, created.runId)).rejects.toThrow(
-        'tidak dapat dibatalkan',
-      );
+      await expect(
+        service.cancel(tenant.db, created.runId, 'test_mrp_run'),
+      ).rejects.toThrow('tidak dapat dibatalkan');
       const row = await pool.query<{ status: string }>(
         `SELECT status FROM "${schema}".mrp_runs WHERE id = $1`,
         [created.runId],
