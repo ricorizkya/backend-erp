@@ -78,6 +78,7 @@ Verification update — 2026-10-26:
   parallel trigger conflict, Redis enqueue failure recovery, and cancellation.
 - The tagged Go integration suite is runnable against an explicitly supplied
   test database and the worker README now reflects the current state.
+- A disposable clean clone installed dependencies and completed `npm run build`.
 - Still pending: authenticated two-tenant business-flow smoke tests, a full
   NestJS↔Redis↔Go run against the rebuilt development database, and secret
   rotation/history rewrite.
