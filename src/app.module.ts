@@ -13,6 +13,8 @@ import { ProductModule } from './modules/product/product.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { SalesOrderModule } from './modules/sales-order/sales-order.module';
 import { BomModule } from './modules/bom/bom.module';
+import { ProductionModule } from './modules/production/production.module';
+import { QualityControlModule } from './modules/quality-control/quality-control.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -39,8 +41,8 @@ import { CommonModule } from './common/common.module';
     PurchaseOrderModule,
     SalesOrderModule,
     BomModule,
-    // ProductionModule,
-    // QualityControlModule,
+    ProductionModule,
+    QualityControlModule,
     // AccountingModule,
   ],
   providers: [

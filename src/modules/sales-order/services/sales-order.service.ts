@@ -12,10 +12,14 @@ import {
   PaginationDto,
 } from '../dto/sales-order.dto';
 import { DocumentNumberService } from '../../../common/document-number.service';
+import { MrpDemandService } from '../../production/services/mrp-demand.service';
 
 @Injectable()
 export class SalesOrderService {
-  constructor(private readonly docNumber: DocumentNumberService) {}
+  constructor(
+    private readonly docNumber: DocumentNumberService,
+    private readonly mrpDemandService: MrpDemandService,
+  ) {}
 
   // ----------------------------------------------------------------
   // LIST
@@ -307,6 +311,39 @@ export class SalesOrderService {
       .where('id', '=', soId)
       .returningAll()
       .execute();
+
+    // Buat MRP Demand untuk item yang can_be_manufactured (MTO)
+    const items = await db
+      .selectFrom('sales_order_items as soi')
+      .innerJoin('product_variants as pv', 'pv.id', 'soi.variant_id')
+      .innerJoin('products as p', 'p.id', 'pv.product_id')
+      .where('soi.so_id', '=', soId)
+      .where('p.can_be_manufactured', '=', true)
+      .select([
+        'soi.id as so_item_id',
+        'soi.variant_id',
+        'soi.quantity',
+        'soi.uom_id',
+      ])
+      .execute();
+
+    const neededDate = updated.requested_date
+      ? new Date(updated.requested_date)
+      : new Date();
+
+    for (const item of items) {
+      await this.mrpDemandService.createFromSalesOrder(
+        db,
+        soId,
+        item.so_item_id,
+        item.variant_id,
+        Number(item.quantity),
+        item.uom_id,
+        neededDate,
+        updated.warehouse_id,
+        confirmedBy,
+      );
+    }
 
     // Refresh available_stock agar soft reservation terupdate
     await sql`REFRESH MATERIALIZED VIEW CONCURRENTLY available_stock`.execute(db);

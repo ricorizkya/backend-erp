@@ -8,20 +8,22 @@
 4. [Modul Auth](#4-modul-auth-srcmodulesauth)
 5. [Modul Product](#5-modul-product-srcmodulesproduct)
 6. [Modul Inventory](#6-modul-inventory-srcmodulesinventory)
-7. [Infrastruktur & Common](#7-infrastruktur--common)
-8. [Skema Database](#8-skema-database)
-9. [Roadmap Pengembangan](#9-roadmap-pengembangan)
+7. [Modul Quality Control](#7-modul-quality-control-srcmodulesquality-control)
+8. [Infrastruktur & Common](#8-infrastruktur--common)
+9. [Skema Database](#9-skema-database)
+10. [Roadmap Pengembangan](#10-roadmap-pengembangan)
 
 ---
 
 ## 1. Ikhtisar Proyek
 
-Sistem backend ERP multi-tenant yang dirancang untuk industri manufaktur dan distribusi. Dibangun dengan **NestJS** + **Fastify** + **PostgreSQL** + **Kysely**. Arsitektur modular memungkinkan pengembangan bertahap — saat ini tiga modul utama sudah aktif: **Auth**, **Product**, dan **Inventory**.
+Sistem backend ERP multi-tenant yang dirancang untuk industri manufaktur dan distribusi. Dibangun dengan **NestJS** + **Fastify** + **PostgreSQL** + **Kysely**. Arsitektur modular memungkinkan pengembangan bertahap — saat ini modul utama yang sudah aktif: **Auth**, **Product**, **Inventory**, dan **Quality Control**.
 
 ### Fitur Utama yang Sudah Aktif
 - Autentikasi JWT dengan refresh token rotation dan rate limiting
 - Manajemen produk dengan sistem variant, atribut, batch/lot, dan multi-UoM
 - Manajemen inventory: pergerakan stok (in/out/transfer), stock opname, dan pelaporan stok real-time
+- Manajemen Quality Control: master parameter & checklist, inspeksi incoming (Goods Receipt) & final (Production Result), tracking cacat (defects), serta disposisi
 - Role-based permission system (RBAC) dengan 19 modul dan 5 aksi
 
 ---
@@ -428,9 +430,70 @@ Breakdown stok sampai level lokasi rak (`warehouse_locations`). Menghitung `SUM(
 
 ---
 
-## 7. Infrastruktur & Common
+## 7. Modul Quality Control (`src/modules/quality-control`)
 
-### 7.1 `main.ts` — Bootstrap
+### 7.1 Struktur File
+```
+src/modules/quality-control/
+├── dto/
+│   └── qc.dto.ts                   # DTO validasi QC (parameters, checklists, defects, inspections)
+├── services/
+│   ├── qc-master.service.ts        # Master data parameter, checklist template, defect types
+│   └── qc-inspection.service.ts    # Transaksi & workflow QC inspection, summary defect
+├── quality-control.controller.ts   # REST Controller untuk seluruh endpoint QC
+└── quality-control.module.ts       # NestJS Module
+```
+
+### 7.2 Endpoints
+
+#### 7.2.1 QC Parameters
+| Method | Endpoint | Description | Permission |
+|---|---|---|---|
+| GET | `/api/v1/qc-parameters` | Daftar parameter QC aktif | `quality_control:read` |
+| POST | `/api/v1/qc-parameters` | Buat parameter QC baru (pass_fail / numeric / text) | `quality_control:write` |
+| DELETE | `/api/v1/qc-parameters/:id` | Nonaktifkan parameter (soft delete) | `quality_control:delete` |
+
+#### 7.2.2 QC Checklists
+| Method | Endpoint | Description | Permission |
+|---|---|---|---|
+| GET | `/api/v1/qc-checklists` | Daftar checklist template (filter per `inspectionType`) | `quality_control:read` |
+| GET | `/api/v1/qc-checklists/:id` | Detail checklist beserta item parameter | `quality_control:read` |
+| POST | `/api/v1/qc-checklists` | Buat checklist template baru dengan item parameter | `quality_control:write` |
+| DELETE | `/api/v1/qc-checklists/:id` | Nonaktifkan checklist template | `quality_control:delete` |
+
+#### 7.2.3 Defect Types
+| Method | Endpoint | Description | Permission |
+|---|---|---|---|
+| GET | `/api/v1/qc-defect-types` | Daftar jenis cacat (severity: critical/major/minor) | `quality_control:read` |
+| POST | `/api/v1/qc-defect-types` | Buat jenis cacat baru | `quality_control:write` |
+
+#### 7.2.4 QC Inspections
+| Method | Endpoint | Description | Permission |
+|---|---|---|---|
+| GET | `/api/v1/qc-inspections` | Daftar inspeksi QC dengan pagination & filter | `quality_control:read` |
+| GET | `/api/v1/qc-inspections/defect-summary` | Summary cacat per periode untuk dashboard | `quality_control:read` |
+| GET | `/api/v1/qc-inspections/:id` | Detail inspeksi (item parameter + defects) | `quality_control:read` |
+| POST | `/api/v1/qc-inspections` | Buat draft inspeksi QC baru | `quality_control:write` |
+| POST | `/api/v1/qc-inspections/:id/complete` | Selesaikan inspeksi (submit hasil & defect) | `quality_control:approve` |
+| POST | `/api/v1/qc-inspections/:id/cancel` | Batalkan inspeksi | `quality_control:write` |
+
+### 7.3 Workflow & Business Rules
+1. **Titik Inspeksi**:
+   - **Incoming QC** (`inspection_type = 'incoming'`): Menghubungkan ke `goods_receipt_id` (GR dari supplier).
+   - **Final QC** (`inspection_type = 'final'`): Menghubungkan ke `production_result_id` (hasil produksi).
+2. **Nomor Dokumen**:
+   - Nomor inspeksi di-generate otomatis via `DocumentNumberService` dengan format `QC-YYYY-NNNNN`.
+3. **Penyelesaian Inspeksi (`complete`)**:
+   - Semua parameter wajib (`is_required = true`) pada checklist harus diisi nilainya.
+   - Hasil inspeksi (`result`): `passed`, `passed_with_note`, atau `failed`.
+   - Disposisi (`disposition`): `accepted`, `accepted_with_debit`, `rework`, `rejected`, atau `pending`.
+   - Cacat (defects) dapat ditambahkan per item inspeksi dengan disposisi spesifik (`pending`, `rework`, `reject`, `accept_as_is`).
+
+---
+
+## 8. Infrastruktur & Common
+
+### 8.1 `main.ts` — Bootstrap
 - Membuat `NestFastifyApplication` dengan Fastify adapter
 - Register `@fastify/helmet` (CSP, HSTS di production)
 - Register `@fastify/cors` (dari `ALLOWED_ORIGINS` env)
@@ -440,31 +503,31 @@ Breakdown stok sampai level lokasi rak (`warehouse_locations`). Menghitung `SUM(
 - Global prefix `/api/v1`
 - Listen di `0.0.0.0` (semua interface)
 
-### 7.2 `app.module.ts` — Root Module
+### 8.2 `app.module.ts` — Root Module
 Meng-import:
 - `ConfigModule` (global, dari `.env`)
 - `RedisModule` (ioredis, dengan retry strategy)
 - `DatabaseModule` (Kysely + PostgreSQL)
 - `CommonModule` (shared utilities)
-- `AuthModule`, `ProductModule`, `InventoryModule`
+- `AuthModule`, `ProductModule`, `InventoryModule`, `QualityControlModule`
 - TenantInterceptor (registered sebagai `APP_INTERCEPTOR`)
 
 Module yang sudah disiapkan tapi belum aktif (commented):
-`PurchaseOrderModule`, `SalesOrderModule`, `BomModule`, `ProductionModule`, `QualityControlModule`, `AccountingModule`.
+`PurchaseOrderModule`, `SalesOrderModule`, `BomModule`, `ProductionModule`, `AccountingModule`.
 
-### 7.3 Custom Decorators
+### 8.3 Custom Decorators
 - **`@TenantDb()`** — Inject `Kysely<TenantSchema>` yang di-scope ke tenant aktif
-- **`@CurrentUser()`** — Inject `AuthenticatedUser` dari `req.user`. Support field extraction: `@CurrentUser('userId')` → langsung string.
+- **`@CurrentUser()`** — Inject `AuthenticatedUser` dari `req.user`. Support field extraction: `@CurrentUser('userId')` → langsung number.
 - **`@RequirePermission(module, action)`** — Metadata decorator untuk PermissionGuard
 
-### 7.4 Global Exception Filter
+### 8.4 Global Exception Filter
 Menangkap semua exception dan mengembalikan format response yang konsisten.
 
 ---
 
-## 8. Skema Database
+## 9. Skema Database
 
-### 8.1 Public Schema (Global)
+### 9.1 Public Schema (Global)
 | Tabel | Kolom Kunci | Deskripsi |
 |-------|-------------|-----------|
 | `tenants` | id, code, name, industry, is_active | Perusahaan/organisasi |
@@ -473,7 +536,7 @@ Menangkap semua exception dan mengembalikan format response yang konsisten.
 | `user_roles` | user_id, role_id | Pivot user-role (many-to-many) |
 | `refresh_tokens` | token_hash, user_id, is_revoked, expires_at | Refresh token storage |
 
-### 8.2 Tenant Schema — Master Data
+### 9.2 Tenant Schema — Master Data
 | Tabel | Kolom Kunci | Deskripsi |
 |-------|-------------|-----------|
 | `branches` | id, name, address, city | Cabang perusahaan |
@@ -489,7 +552,7 @@ Menangkap semua exception dan mengembalikan format response yang konsisten.
 | `product_variant_attributes` | variant_id, attribute_value_id | Pivot variant-attribute |
 | `batches` | id, variant_id, batch_number, manufacture_date, expiry_date | Lot/batch produksi |
 
-### 8.3 Tenant Schema — Inventory
+### 9.3 Tenant Schema — Inventory
 | Tabel | Kolom Kunci | Deskripsi |
 |-------|-------------|-----------|
 | `inventory_movement_types` | id, code, direction (in/out/transfer) | Tipe pergerakan stok |
@@ -499,22 +562,32 @@ Menangkap semua exception dan mengembalikan format response yang konsisten.
 | `stock_opname_items` | id, opname_id, variant_id, system_quantity, actual_quantity, difference | Detail opname per item |
 | `stock_summary` | variant_id, warehouse_id, batch_id, quantity_on_hand | **Materialized View** untuk query stok cepat |
 
-### 8.4 Tenant Schema — Belum Diimplementasikan
+### 9.4 Tenant Schema — Quality Control
+| Tabel | Kolom Kunci | Deskripsi |
+|-------|-------------|-----------|
+| `qc_parameters` | id, code, name, value_type (pass_fail/numeric/text), min_value, max_value, unit | Parameter & toleransi inspeksi |
+| `qc_checklists` | id, name, inspection_type (incoming/final), product_category_id | Template checklist QC |
+| `qc_checklist_items` | id, checklist_id, parameter_id, sequence, is_required | Parameter item per template checklist |
+| `qc_inspections` | id, number, checklist_id, inspection_type, goods_receipt_id, production_result_id, variant_id, batch_id, result, disposition, status | Header transaksi inspeksi QC |
+| `qc_inspection_items` | id, inspection_id, checklist_item_id, parameter_id, pass_fail_value, numeric_value, text_value, is_within_spec | Hasil pemeriksaan per parameter |
+| `qc_defect_types` | id, code, name, severity (critical/major/minor) | Kategori/jenis cacat |
+| `qc_defects` | id, inspection_id, defect_type_id, quantity_defective, uom_id, disposition | Temuan cacat & disposisinya |
+
+### 9.5 Tenant Schema — Belum Diimplementasikan
 Tabel-tabel berikut sudah didefinisikan di `database.types.ts` tapi belum ada service/controller:
 - **Purchase:** `purchase_requests`, `rfqs`, `purchase_orders`, `goods_receipts`, `vendor_invoices`
 - **Sales:** `sales_quotations`, `sales_orders`, `delivery_orders`, `customer_invoices`, `payment_receipts`
 - **Manufacturing:** `bom_headers`, `bom_versions`, `bom_items`, `mrp_demands`, `work_orders`, `production_results`
-- **Quality Control:** `qc_parameters`, `qc_checklists`, `qc_inspections`, `qc_defects`
 - **Accounting:** `accounts`, `journal_entries`, `general_ledger`, `ap_transactions`, `ar_transactions`, `bank_accounts`
 
 ---
 
-## 9. Roadmap Pengembangan
+## 10. Roadmap Pengembangan
 
-Dengan pondasi Auth, Product, dan Inventory yang sudah solid, berikut urutan pengembangan yang direkomendasikan:
+Dengan pondasi Auth, Product, Inventory, dan Quality Control yang sudah solid, berikut urutan pengembangan yang direkomendasikan:
 
-1. **Modul Purchase** — PR → RFQ → PO → Goods Receipt → Vendor Invoice
+1. **Modul Purchase** — PR → RFQ → PO → Goods Receipt → Vendor Invoice (terintegrasi dengan Incoming QC)
 2. **Modul Sales** — Quotation → SO → Delivery Order → Customer Invoice → Payment Receipt
-3. **Modul BOM & Manufacturing** — BOM management → MRP → Work Orders → Production Results
-4. **Modul Quality Control** — QC parameter setup → Inspection workflow → Defect tracking
-5. **Modul Accounting** — Chart of Accounts → Journal Entries → AP/AR → Bank Reconciliation
+3. **Modul BOM & Manufacturing** — BOM management → MRP → Work Orders → Production Results (terintegrasi dengan Final QC)
+4. **Modul Accounting** — Chart of Accounts → Journal Entries → AP/AR → Bank Reconciliation
+
