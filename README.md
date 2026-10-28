@@ -5,9 +5,11 @@ dan worker MRP Go.
 
 ## Development lokal
 
-1. Siapkan PostgreSQL database `new_erp`, Redis, dan role aplikasi.
-2. Gunakan `.env.development.local` untuk konfigurasi lokal; file ini di-ignore Git.
-3. Jalankan `npm install` lalu `npm run start:dev`.
+1. Salin `.env.example` menjadi `.env.development.local`, lalu isi secret lokal.
+2. Siapkan PostgreSQL database `new_erp` dan Redis.
+3. Jalankan `npm install` lalu `npm run start:dev` agar migration public dan tenant dijalankan.
+4. Isi `MRP_SERVICE_PASSWORD`, lalu jalankan `npm run db:provision-mrp-role`.
+5. Bootstrap admin memakai nilai `BOOTSTRAP_*` lokal sesuai script bootstrap yang tersedia.
 
 Startup menjalankan migration public dan seluruh tenant aktif. Migration yang
 sudah tercatat bersifat immutable; perubahan schema harus memakai migration baru.
@@ -30,10 +32,22 @@ tenant berprefix `tenant_test_`. Target non-test ditolak oleh test guard.
 ## MRP
 
 NestJS membuat `mrp_runs` berstatus `pending` dan enqueue job dengan ID stabil
-`mrp-run-<runId>`. Worker Go meng-claim `pending` menjadi `running` dalam
+`mrp-<tenantCode>-run-<runId>`. Scope tenant wajib berada pada ID karena sequence
+`mrp_runs` bersifat lokal per schema. Worker Go meng-claim `pending` menjadi `running` dalam
 transaksi pendek, menghitung dalam transaksi terpisah, lalu menulis planned order
 secara idempotent. Status terminal adalah `completed`, `failed_permanent`, atau
 `cancelled`; reconciliation menangani enqueue gagal dan retry transient.
+
+State transition yang didukung:
+
+```text
+pending -> running -> completed
+   |          |  \\-> failed -> pending (maksimal 3 retry)
+   |          \\----> cancelled
+   \\--------------> cancelled
+failed ----------------> failed_permanent
+running (stuck) --------> pending
+```
 
 ## Batas costing v1
 
@@ -42,6 +56,7 @@ production cost sheet penuh belum termasuk scope hardening ini.
 
 ## Reset development
 
-Setelah backup, hentikan aplikasi/worker, hapus key BullMQ MRP saja, drop/create
-database, jalankan migration, provisioning role MRP, bootstrap admin, dan smoke
-test dua tenant.
+Setelah backup, hentikan aplikasi/worker, hapus hanya key BullMQ MRP, drop/create
+database, jalankan aplikasi untuk migration 001-016, provision login role MRP,
+bootstrap admin dari secret lokal, lalu jalankan smoke test dua tenant. Migration
+yang sudah tercatat tidak boleh diedit; checksum mismatch selalu menghentikan startup.

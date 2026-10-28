@@ -635,7 +635,7 @@ export class PaymentReceiptService {
         .forUpdate()
         .execute();
       const invoiceById = new Map(
-        lockedInvoices.map((invoice) => [invoice.id, invoice]),
+        lockedInvoices.map((invoice) => [Number(invoice.id), invoice]),
       );
 
       for (const allocation of dto.allocations) {

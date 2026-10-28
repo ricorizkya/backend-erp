@@ -1,3 +1,15 @@
+# Status terkini — 2026-10-28
+
+Hardening poin 1-10 pada `docs/planning.md` telah diimplementasikan. Database
+development dibangun ulang dari kosong melalui migration 001-016. Acceptance
+suite PostgreSQL mencakup tenant lifecycle, confirm/post paralel, stock lock,
+AP/AR overpayment, partial invoice, COGS, QC, serta state machine/reconciliation
+MRP. E2E lokal dua tenant NestJS → Redis/BullMQ → worker Go mencapai `completed`.
+
+Dokumen di bawah adalah catatan keputusan historis, bukan status implementasi
+terkini. Sumber kebenaran operasional adalah `README.md`, `docs/planning.md`, dan
+kode/test repository.
+
 # Session Summary — ERP Manufaktur SaaS
 
 > **Tanggal Session:** Agustus 2026 (update terakhir: sesi lanjutan MRP Engine GoLang)

@@ -305,7 +305,7 @@ export class QcInspectionService {
 
       const submittedIds = new Set(dto.items.map((i) => i.checklistItemId));
       const missingRequired = requiredItems.filter(
-        (ri) => !submittedIds.has(ri.id),
+        (ri) => !submittedIds.has(Number(ri.id)),
       );
 
       if (missingRequired.length > 0) {
@@ -338,8 +338,8 @@ export class QcInspectionService {
             .execute();
 
           for (const p of params) {
-            paramMap.set(p.id, {
-              id: p.id,
+            paramMap.set(Number(p.id), {
+              id: Number(p.id),
               value_type: p.value_type,
               min_value: p.min_value !== null ? Number(p.min_value) : null,
               max_value: p.max_value !== null ? Number(p.max_value) : null,

@@ -8,8 +8,6 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mrp_service') THEN
     CREATE ROLE mrp_service NOLOGIN;
-  ELSE
-    ALTER ROLE mrp_service NOLOGIN PASSWORD NULL;
   END IF;
 END
 $$;

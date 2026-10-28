@@ -20,10 +20,11 @@ export async function lockStockKeys(
   ].sort((left, right) => keyString(left).localeCompare(keyString(right)));
 
   for (const key of uniqueKeys) {
+    const lockKey = keyString(key);
     await sql`
       SELECT pg_advisory_xact_lock(
         hashtextextended(
-          concat(current_schema(), ':', ${key.variantId}, ':', ${key.warehouseId}, ':', ${key.batchId ?? 0}),
+          concat(current_schema(), ':', ${lockKey}::text),
           0
         )
       )

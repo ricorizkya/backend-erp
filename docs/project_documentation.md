@@ -17,13 +17,16 @@
 
 ## 1. Ikhtisar Proyek
 
-Sistem backend ERP multi-tenant yang dirancang untuk industri manufaktur dan distribusi. Dibangun dengan **NestJS** + **Fastify** + **PostgreSQL** + **Kysely**. Arsitektur modular memungkinkan pengembangan bertahap — saat ini modul utama yang sudah aktif: **Auth**, **Product**, **Inventory**, dan **Quality Control**.
+Sistem backend ERP multi-tenant untuk industri manufaktur dan distribusi. Dibangun dengan **NestJS** + **Fastify** + **PostgreSQL** + **Kysely**. Modul aktif mencakup **Auth**, **Product**, **Inventory**, **Purchase**, **Sales**, **BOM/Production/MRP**, **Quality Control**, dan **Accounting**.
 
 ### Fitur Utama yang Sudah Aktif
 - Autentikasi JWT dengan refresh token rotation dan rate limiting
 - Manajemen produk dengan sistem variant, atribut, batch/lot, dan multi-UoM
 - Manajemen inventory: pergerakan stok (in/out/transfer), stock opname, dan pelaporan stok real-time
 - Manajemen Quality Control: master parameter & checklist, inspeksi incoming (Goods Receipt) & final (Production Result), tracking cacat (defects), serta disposisi
+- Procurement PR → RFQ → PO → GR → vendor invoice/AP
+- Sales quotation → SO → DO → customer invoice/AR → payment
+- BOM, work order, MRP asynchronous, planned order, dan posting inventory/accounting
 - Role-based permission system (RBAC) dengan 19 modul dan 5 aksi
 
 ---
@@ -42,7 +45,7 @@ Sistem backend ERP multi-tenant yang dirancang untuk industri manufaktur dan dis
 | Security | @fastify/helmet, @fastify/cors, @fastify/rate-limit, bcrypt | Security headers, CORS, rate limit, hashing |
 | Scheduler | @nestjs/schedule | Cron job (token cleanup) |
 
-### Environment Variables (`.env.development`)
+### Environment Variables (`.env.development.local`)
 ```
 PORT=3000                     # Port aplikasi
 DB_HOST, DB_PORT, DB_NAME     # Koneksi PostgreSQL
@@ -573,21 +576,20 @@ Menangkap semua exception dan mengembalikan format response yang konsisten.
 | `qc_defect_types` | id, code, name, severity (critical/major/minor) | Kategori/jenis cacat |
 | `qc_defects` | id, inspection_id, defect_type_id, quantity_defective, uom_id, disposition | Temuan cacat & disposisinya |
 
-### 9.5 Tenant Schema — Belum Diimplementasikan
-Tabel-tabel berikut sudah didefinisikan di `database.types.ts` tapi belum ada service/controller:
-- **Purchase:** `purchase_requests`, `rfqs`, `purchase_orders`, `goods_receipts`, `vendor_invoices`
-- **Sales:** `sales_quotations`, `sales_orders`, `delivery_orders`, `customer_invoices`, `payment_receipts`
-- **Manufacturing:** `bom_headers`, `bom_versions`, `bom_items`, `mrp_demands`, `work_orders`, `production_results`
-- **Accounting:** `accounts`, `journal_entries`, `general_ledger`, `ap_transactions`, `ar_transactions`, `bank_accounts`
+### 9.5 Tenant Schema — Modul Transaksional
+
+Purchase, Sales, Manufacturing/MRP, QC, dan Accounting sudah mempunyai migration,
+service, serta controller. Jalur confirm/post yang menghasilkan side effect memakai
+row lock/conditional update; stock-out memakai advisory transaction lock. Partial
+invoice dihitung dari kuantitas Delivery Order dan COGS v1 memakai
+`product_variants.cost_price`.
 
 ---
 
-## 10. Roadmap Pengembangan
+## 10. Batas Scope dan Roadmap Berikutnya
 
-Dengan pondasi Auth, Product, Inventory, dan Quality Control yang sudah solid, berikut urutan pengembangan yang direkomendasikan:
-
-1. **Modul Purchase** — PR → RFQ → PO → Goods Receipt → Vendor Invoice (terintegrasi dengan Incoming QC)
-2. **Modul Sales** — Quotation → SO → Delivery Order → Customer Invoice → Payment Receipt
-3. **Modul BOM & Manufacturing** — BOM management → MRP → Work Orders → Production Results (terintegrasi dengan Final QC)
-4. **Modul Accounting** — Chart of Accounts → Journal Entries → AP/AR → Bank Reconciliation
+Hardening poin 1-10 selesai. Pekerjaan berikutnya yang sengaja di luar scope adalah
+frontend, administration API user/role/tenant, tax-code overhaul, bank reconciliation
+redesign, dan production cost sheet/FIFO/average costing. Sampai valuation tersebut
+dibangun, `product_variants.cost_price` adalah sumber biaya resmi untuk COGS v1.
 

@@ -196,7 +196,10 @@ export class ApService {
         .forUpdate()
         .execute();
       const transactionById = new Map(
-        lockedTransactions.map((transaction) => [transaction.id, transaction]),
+        lockedTransactions.map((transaction) => [
+          Number(transaction.id),
+          transaction,
+        ]),
       );
 
       for (const allocation of dto.allocations) {

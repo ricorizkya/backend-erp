@@ -555,3 +555,30 @@ Poin 1–10 dianggap selesai hanya bila:
 - Tidak ada secret atau credential default dalam history.
 - Dokumentasi sama dengan perilaku runtime.
 Yang sengaja tidak termasuk: frontend, user/role management API, tax-code overhaul, bank reconciliation redesign, dan production cost sheet penuh. Risiko tersisa terbesar adalah metode valuation yang masih memakai product_variants.cost_price; itu cukup untuk menutup bug harga jual sebagai COGS, tetapi belum menggantikan FIFO/average costing.
+
+## Completion evidence — 28 Oktober 2026
+
+Seluruh tahap 0-7 dan poin audit 1-10 sudah diimplementasikan serta direproduksi.
+Evidence terbaru:
+
+- Database development `new_erp` dibuat ulang dari kosong; public dan tenant
+  migration 001-016 berhasil, role `mrp_service` mempunyai login dan grant tenant.
+- Backend: build dan ESLint read-only lulus; 4 unit suite/11 test dan 8 integration
+  suite/29 test lulus. Concurrency subset menjalankan 6 skenario bisnis paralel.
+- PostgreSQL acceptance mencakup pool/search-path, checksum immutable, bootstrap
+  admin idempotent, GR/stock/journal, AP/AR, partial invoice/COGS, QC, period close,
+  MRP enqueue/retry/stuck/cancel, dan dua reconciler paralel.
+- Worker Go: `go test -race ./...` dan tagged PostgreSQL integration suite lulus;
+  state tests mencakup visible claim, double claim, late failure vs cancellation,
+  guarded writer, idempotent retry, dan schema mismatch.
+- Runtime E2E authenticated dua tenant NestJS → Redis/BullMQ → worker Go selesai
+  dengan state `completed` pada kedua schema. Fixture tenant/user/job kemudian
+  dibersihkan.
+- Template environment tersanitasi berada pada `.env.example`; environment lokal
+  di-ignore. Migration role tidak menghapus password role yang sudah diprovision.
+- `docs/next-plan.md` sekarang menjadi status pasca-hardening; session lama ditandai
+  historis dan README backend/worker memakai job ID tenant-scoped yang aktual.
+
+Status implementation plan: **selesai 100% untuk scope yang didefinisikan di atas**.
+Ini bukan klaim production deployment: server production nyata, frontend, serta
+fitur yang eksplisit dikecualikan tetap berada di luar scope.

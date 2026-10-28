@@ -16,6 +16,7 @@ export enum MrpRunStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   FAILED_PERMANENT = 'failed_permanent',
+  CANCELLED = 'cancelled',
 }
 
 export enum PlannedOrderStatus {
