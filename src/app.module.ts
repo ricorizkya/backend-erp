@@ -11,6 +11,8 @@ import { HashIdModule } from './common/hashid/hashid.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
+import { SalesOrderModule } from './modules/sales-order/sales-order.module';
+import { BomModule } from './modules/bom/bom.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -35,8 +37,8 @@ import { CommonModule } from './common/common.module';
     ProductModule,
     InventoryModule,
     PurchaseOrderModule,
-    // SalesOrderModule,
-    // BomModule,
+    SalesOrderModule,
+    BomModule,
     // ProductionModule,
     // QualityControlModule,
     // AccountingModule,

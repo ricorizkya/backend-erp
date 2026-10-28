@@ -7,7 +7,7 @@ import {
 import { Kysely, sql } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import { CreateGoodsReceiptDto, PaginationDto } from '../dto/purchase-order.dto';
-import { DocumentNumberService } from './document-number.service';
+import { DocumentNumberService } from '../../../common/document-number.service';
 import { PurchaseOrderService } from './purchase-order.service';
 
 @Injectable()

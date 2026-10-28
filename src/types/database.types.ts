@@ -221,6 +221,7 @@ export interface TenantSchema {
   stock_opnames: StockOpnamesTable;
   stock_opname_items: StockOpnameItemsTable;
   stock_summary: StockSummaryTable;
+  available_stock: AvailableStockTable;
 
   // Purchase Order
   document_counters: DocumentCountersTable;
@@ -421,6 +422,15 @@ export interface StockSummaryTable {
   warehouse_id: number;
   batch_id: number | null;
   quantity_on_hand: number;
+}
+
+export interface AvailableStockTable {
+  variant_id: number;
+  warehouse_id: number;
+  batch_id: number | null;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  quantity_available: number;
 }
 
 // ================================================================
