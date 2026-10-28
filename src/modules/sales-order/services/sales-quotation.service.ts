@@ -22,7 +22,8 @@ export class SalesQuotationService {
   // ----------------------------------------------------------------
 
   async findAll(db: Kysely<TenantSchema>, filter: PaginationDto) {
-    const { page, limit, search, status, dateFrom, dateTo, customerId } = filter;
+    const { page, limit, search, status, dateFrom, dateTo, customerId } =
+      filter;
 
     let query = db
       .selectFrom('sales_quotations as sq')
@@ -42,8 +43,10 @@ export class SalesQuotationService {
 
     if (status) query = query.where('sq.status', '=', status as any);
     if (customerId) query = query.where('sq.customer_id', '=', customerId);
-    if (dateFrom) query = query.where('sq.quotation_date', '>=', new Date(dateFrom));
-    if (dateTo) query = query.where('sq.quotation_date', '<=', new Date(dateTo));
+    if (dateFrom)
+      query = query.where('sq.quotation_date', '>=', new Date(dateFrom));
+    if (dateTo)
+      query = query.where('sq.quotation_date', '<=', new Date(dateTo));
     if (search) {
       query = query.where((eb) =>
         eb.or([
@@ -68,7 +71,10 @@ export class SalesQuotationService {
       .offset((page - 1) * limit)
       .execute();
 
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // ----------------------------------------------------------------
@@ -150,7 +156,8 @@ export class SalesQuotationService {
       .executeTakeFirst();
 
     if (!customer) throw new NotFoundException('Customer tidak ditemukan');
-    if (!dto.items.length) throw new BadRequestException('Minimal satu item diperlukan');
+    if (!dto.items.length)
+      throw new BadRequestException('Minimal satu item diperlukan');
 
     return db.transaction().execute(async (trx) => {
       const number = await this.docNumber.generate(trx, 'SQ');
@@ -168,7 +175,8 @@ export class SalesQuotationService {
           tax_amount: totals.taxAmount,
           discount_amount: totals.discountAmount,
           total_amount: totals.totalAmount,
-          payment_term_days: dto.paymentTermDays ?? Number(customer.payment_term),
+          payment_term_days:
+            dto.paymentTermDays ?? Number(customer.payment_term),
           delivery_address: dto.deliveryAddress ?? null,
           notes: dto.notes ?? null,
           terms_conditions: dto.termsConditions ?? null,
@@ -214,15 +222,21 @@ export class SalesQuotationService {
   ) {
     const sq = await this.getSqOrThrow(db, sqId);
     if (sq.status !== 'draft') {
-      throw new ConflictException('Hanya quotation berstatus draft yang bisa diubah');
+      throw new ConflictException(
+        'Hanya quotation berstatus draft yang bisa diubah',
+      );
     }
 
     const [updated] = await db
       .updateTable('sales_quotations')
       .set({
         ...(dto.validUntil ? { valid_until: new Date(dto.validUntil) } : {}),
-        ...(dto.paymentTermDays !== undefined ? { payment_term_days: dto.paymentTermDays } : {}),
-        ...(dto.deliveryAddress !== undefined ? { delivery_address: dto.deliveryAddress ?? null } : {}),
+        ...(dto.paymentTermDays !== undefined
+          ? { payment_term_days: dto.paymentTermDays }
+          : {}),
+        ...(dto.deliveryAddress !== undefined
+          ? { delivery_address: dto.deliveryAddress ?? null }
+          : {}),
         ...(dto.notes !== undefined ? { notes: dto.notes ?? null } : {}),
         updated_at: new Date(),
       })
@@ -237,11 +251,7 @@ export class SalesQuotationService {
   // SEND (draft → sent)
   // ----------------------------------------------------------------
 
-  async send(
-    db: Kysely<TenantSchema>,
-    sqId: number,
-    sentBy: number,
-  ) {
+  async send(db: Kysely<TenantSchema>, sqId: number, sentBy: number) {
     const sq = await this.getSqOrThrow(db, sqId);
     if (sq.status !== 'draft') {
       throw new ConflictException(`Status quotation saat ini: ${sq.status}`);
@@ -249,7 +259,12 @@ export class SalesQuotationService {
 
     const [updated] = await db
       .updateTable('sales_quotations')
-      .set({ status: 'sent', sent_by: sentBy, sent_at: new Date(), updated_at: new Date() })
+      .set({
+        status: 'sent',
+        sent_by: sentBy,
+        sent_at: new Date(),
+        updated_at: new Date(),
+      })
       .where('id', '=', sqId)
       .returningAll()
       .execute();
@@ -349,8 +364,15 @@ export class SalesQuotationService {
     };
   }
 
-  private calcLineSubtotal(qty: number, price: number, disc: number, tax: number) {
-    return Math.round(qty * price * (1 - disc / 100) * (1 + tax / 100) * 100) / 100;
+  private calcLineSubtotal(
+    qty: number,
+    price: number,
+    disc: number,
+    tax: number,
+  ) {
+    return (
+      Math.round(qty * price * (1 - disc / 100) * (1 + tax / 100) * 100) / 100
+    );
   }
 
   private async getSqOrThrow(db: Kysely<TenantSchema>, sqId: number) {

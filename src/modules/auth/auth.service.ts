@@ -129,7 +129,10 @@ export class AuthService {
       .where('tenant_id', '=', tenant.id)
       .select('hash_salt')
       .executeTakeFirst();
-    const salt = secret?.hash_salt || 'default_salt';
+    if (!secret?.hash_salt) {
+      throw new UnauthorizedException('Konfigurasi tenant tidak lengkap');
+    }
+    const salt = secret.hash_salt;
 
     // 9. Reset rate limit setelah login sukses
     await this.redis.del(REDIS_KEYS.rateLimitLogin(ipAddress));
@@ -242,11 +245,7 @@ export class AuthService {
   // LOGOUT
   // ----------------------------------------------------------------
 
-  async logout(
-    userId: number,
-    jti: string,
-    accessToken: string,
-  ): Promise<void> {
+  async logout(userId: number, jti: string): Promise<void> {
     // 1. Blacklist access token sampai expired
     await this.redis.setex(
       REDIS_KEYS.blacklistedToken(jti),

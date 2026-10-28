@@ -94,7 +94,7 @@ export class MigrationService {
       .sort();
 
     for (const filename of files) {
-      if (filename === '000_create_migration_history.sql') continue;
+      if (filename === '000_create_migrations_history.sql') continue;
       await this.applyMigration(client, migrationsPath, filename, schemaName);
     }
   }
@@ -122,10 +122,9 @@ export class MigrationService {
 
       if (storedChecksum !== checksum) {
         throw new Error(
-          `Migration checksum mismatch: ${filename}` +
-            `(schema : ${schemaName}). ` +
-            `Do not edit migration file was running. ` +
-            `Make new migration for schema.`,
+          `Migration checksum mismatch: ${filename} ` +
+            `(schema: ${schemaName}, stored: ${storedChecksum}, file: ${checksum}). ` +
+            `Create a new migration instead of editing an applied migration.`,
         );
       }
       return;
@@ -148,7 +147,8 @@ export class MigrationService {
   }
 
   private computeChecksum(content: string): string {
-    return crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+    const normalized = content.replace(/\r\n/g, '\n');
+    return crypto.createHash('sha256').update(normalized, 'utf8').digest('hex');
   }
 
   private validateTenantCode(code: string): void {

@@ -82,8 +82,13 @@ export class HashIdService {
       for (const [key, value] of Object.entries(
         data as Record<string, unknown>,
       )) {
-        if (this.isIdField(key) && typeof value === 'number') {
-          result[key] = this.encode(value, salt);
+        if (
+          this.isIdField(key) &&
+          (typeof value === 'number' ||
+            typeof value === 'bigint' ||
+            (typeof value === 'string' && /^\d+$/.test(value)))
+        ) {
+          result[key] = this.encode(value as number, salt);
         } else if (typeof value === 'object') {
           result[key] = this.encodeObject(value, salt);
         } else {

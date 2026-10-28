@@ -7,9 +7,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { finalize } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { Kysely } from 'kysely';
 import { DatabaseService } from '../../database/database.service';
+import { TenantSchema } from '../../types/database.types';
+import { AuthenticatedUser } from '../../modules/auth/auth.types';
 import { SKIP_TENANT_KEY } from '../decorators/skip-tenant.decorator';
 import { TENANT_DB_KEY } from '../decorators/tenant-db.decorator';
 import { HASH_SALT_KEY } from '../hashid/hashid.constants';
@@ -47,13 +50,19 @@ export class TenantInterceptor implements NestInterceptor {
     ctx: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<unknown>> {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<
+      FastifyRequest & {
+        user?: AuthenticatedUser;
+        [TENANT_DB_KEY]?: Kysely<TenantSchema>;
+        [HASH_SALT_KEY]?: string;
+      }
+    >();
 
     // Cek apakah route/controller di-skip dari tenant interceptor
-    const skipTenant = this.reflector.getAllAndOverride<boolean>(SKIP_TENANT_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    const skipTenant = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TENANT_KEY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
 
     if (skipTenant) {
       return next.handle();
@@ -73,39 +82,66 @@ export class TenantInterceptor implements NestInterceptor {
     const { db, release } = await this.databaseService.getTenantDb(tenantCode);
     request[TENANT_DB_KEY] = db;
 
-    // Load hash salt dari cache atau database
-    let salt = this.saltCache.get(tenantCode);
-    if (!salt) {
-      const publicDb = this.databaseService.getPublicDb();
-      const tenant = await publicDb
-        .selectFrom('tenants')
-        .where('code', '=', tenantCode)
-        .select('id')
-        .executeTakeFirst();
+    try {
+      // Load hash salt dari cache atau database
+      let salt = this.saltCache.get(tenantCode);
+      if (!salt) {
+        const publicDb = this.databaseService.getPublicDb();
+        const tenant = await publicDb
+          .selectFrom('tenants')
+          .where('code', '=', tenantCode)
+          .select('id')
+          .executeTakeFirst();
 
-      if (tenant) {
+        if (!tenant) {
+          throw new UnauthorizedException(
+            'Tenant tidak ditemukan atau tidak aktif.',
+          );
+        }
+
         const secret = await publicDb
           .selectFrom('tenant_secrets')
           .where('tenant_id', '=', tenant.id)
           .select('hash_salt')
           .executeTakeFirst();
 
-        if (secret) {
-          salt = secret.hash_salt;
-          this.saltCache.set(tenantCode, secret.hash_salt);
+        if (!secret?.hash_salt) {
+          throw new UnauthorizedException('Konfigurasi tenant tidak lengkap.');
         }
+
+        salt = secret.hash_salt;
+        this.saltCache.set(tenantCode, secret.hash_salt);
       }
+
+      request[HASH_SALT_KEY] = salt;
+
+      return new Observable((subscriber) => {
+        const releaseThen = (done: () => void, originalError?: unknown) => {
+          void release()
+            .then(() => done())
+            .catch((releaseError: unknown) => {
+              subscriber.error(originalError ?? releaseError);
+            });
+        };
+
+        const subscription = next.handle().subscribe({
+          next: (value) => subscriber.next(value),
+          error: (error: unknown) =>
+            releaseThen(() => subscriber.error(error), error),
+          complete: () =>
+            releaseThen(() => {
+              this.logger.debug(
+                `Connection released for tenant: ${tenantCode}`,
+              );
+              subscriber.complete();
+            }),
+        });
+
+        return () => subscription.unsubscribe();
+      });
+    } catch (error) {
+      await release();
+      throw error;
     }
-
-    request[HASH_SALT_KEY] = salt;
-
-    // finalize() dipanggil baik saat sukses maupun error
-    // ini yang menjamin tidak ada connection leak
-    return next.handle().pipe(
-      finalize(() => {
-        release();
-        this.logger.debug(`Connection released for tenant: ${tenantCode}`);
-      }),
-    );
   }
 }

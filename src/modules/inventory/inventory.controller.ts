@@ -4,7 +4,6 @@ import {
   Post,
   Patch,
   Delete,
-  Put,
   Body,
   Param,
   Query,
@@ -333,8 +332,7 @@ export class InventoryController {
   cancelOpname(
     @TenantDb() db: Kysely<TenantSchema>,
     @Param('id', HashIdPipe) id: number,
-    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.stockOpnameService.cancel(db, id, user.userId);
+    return this.stockOpnameService.cancel(db, id);
   }
 }

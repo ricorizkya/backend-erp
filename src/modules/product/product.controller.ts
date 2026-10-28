@@ -20,8 +20,6 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/auth.types';
 import { MODULES, ACTIONS } from '../auth/auth.constants';
 
 import { ProductService } from './service/product.service';
@@ -227,9 +225,8 @@ export class ProductController {
   createProduct(
     @TenantDb() db: Kysely<TenantSchema>,
     @Body() dto: CreateProductDto,
-    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productService.create(db, dto, user.userId);
+    return this.productService.create(db, dto);
   }
 
   @Patch('products/:id')

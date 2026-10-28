@@ -44,11 +44,8 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async logout(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
-    // Ambil raw token dari header untuk blacklisting
-    const authHeader = req.headers.authorization ?? '';
-    const accessToken = authHeader.replace('Bearer ', '');
-    await this.authService.logout(user.userId, user.jti, accessToken);
+  async logout(@CurrentUser() user: AuthenticatedUser) {
+    await this.authService.logout(user.userId, user.jti);
     return { message: 'Logout berhasil' };
   }
 
@@ -73,7 +70,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@CurrentUser() user: AuthenticatedUser) {
+  getProfile(@CurrentUser() user: AuthenticatedUser) {
     return {
       userId: user.userId,
       email: user.email,

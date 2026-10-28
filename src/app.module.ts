@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from './database/database.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
@@ -15,14 +17,21 @@ import { SalesOrderModule } from './modules/sales-order/sales-order.module';
 import { BomModule } from './modules/bom/bom.module';
 import { ProductionModule } from './modules/production/production.module';
 import { QualityControlModule } from './modules/quality-control/quality-control.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
+      envFilePath: [
+        `.env.${process.env.NODE_ENV}.local`,
+        `.env.${process.env.NODE_ENV}`,
+        '.env.local',
+        '.env',
+      ],
     }),
+    ScheduleModule.forRoot(),
     RedisModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
         type: 'single',
@@ -31,6 +40,38 @@ import { CommonModule } from './common/common.module';
       }),
       inject: [ConfigService],
       imports: [ConfigModule],
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        if (redisUrl) {
+          try {
+            const parsed = new URL(redisUrl);
+            return {
+              connection: {
+                host: parsed.hostname || 'localhost',
+                port: parseInt(parsed.port || '6379', 10),
+                password: parsed.password || undefined,
+                username: parsed.username || undefined,
+                db:
+                  parsed.pathname.length > 1
+                    ? Number(parsed.pathname.slice(1))
+                    : undefined,
+              },
+            };
+          } catch {
+            // fallback
+          }
+        }
+        return {
+          connection: {
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+          },
+        };
+      },
     }),
     DatabaseModule,
     CommonModule,
@@ -43,7 +84,7 @@ import { CommonModule } from './common/common.module';
     BomModule,
     ProductionModule,
     QualityControlModule,
-    // AccountingModule,
+    AccountingModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },

@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, Selectable } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateProductDto,
@@ -158,11 +158,7 @@ export class ProductService {
   // CREATE PRODUCT
   // ----------------------------------------------------------------
 
-  async create(
-    db: Kysely<TenantSchema>,
-    dto: CreateProductDto,
-    createdBy: number,
-  ) {
+  async create(db: Kysely<TenantSchema>, dto: CreateProductDto) {
     // Cek duplikasi kode
     const existing = await db
       .selectFrom('products')
@@ -489,7 +485,7 @@ export class ProductService {
     productId: number,
     dtos: CreateVariantDto[],
   ) {
-    const results: any[] = [];
+    const results: Selectable<TenantSchema['product_variants']>[] = [];
 
     for (const dto of dtos) {
       // Cek duplikasi SKU

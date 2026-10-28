@@ -895,10 +895,7 @@ export class BomService {
       .execute();
   }
 
-  private async getVersionOrThrow(
-    db: Kysely<TenantSchema>,
-    versionId: number,
-  ) {
+  private async getVersionOrThrow(db: Kysely<TenantSchema>, versionId: number) {
     const version = await db
       .selectFrom('bom_versions')
       .where('id', '=', versionId)

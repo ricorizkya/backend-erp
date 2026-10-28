@@ -465,6 +465,8 @@ INSERT INTO accounts (code, name, account_type, account_group, is_header, level)
 ON CONFLICT (code) DO NOTHING;
 
 -- Set system_account untuk akun yang dipakai auto-posting
+UPDATE accounts SET system_account = 'cash'                  WHERE code = '1-1-001';
+UPDATE accounts SET system_account = 'bank'                  WHERE code = '1-1-002';
 UPDATE accounts SET system_account = 'ar'                  WHERE code = '1-1-003';
 UPDATE accounts SET system_account = 'inventory_raw'       WHERE code = '1-1-005';
 UPDATE accounts SET system_account = 'inventory_wip'       WHERE code = '1-1-006';

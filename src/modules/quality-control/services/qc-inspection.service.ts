@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Kysely } from 'kysely';
+import { Kysely, type ReferenceExpression } from 'kysely';
 import { TenantSchema } from '../../../types/database.types';
 import {
   CreateQcInspectionDto,
@@ -130,11 +130,7 @@ export class QcInspectionService {
     // Inspection items (hasil per parameter)
     const items = await db
       .selectFrom('qc_inspection_items as qii')
-      .innerJoin(
-        'qc_checklist_items as qci',
-        'qci.id',
-        'qii.checklist_item_id',
-      )
+      .innerJoin('qc_checklist_items as qci', 'qci.id', 'qii.checklist_item_id')
       .innerJoin('qc_parameters as qp', 'qp.id', 'qii.parameter_id')
       .where('qii.inspection_id', '=', inspectionId)
       .select([
@@ -187,10 +183,7 @@ export class QcInspectionService {
     createdBy: number,
   ) {
     // Validasi source constraint
-    if (
-      dto.inspectionType === InspectionType.INCOMING &&
-      !dto.goodsReceiptId
-    ) {
+    if (dto.inspectionType === InspectionType.INCOMING && !dto.goodsReceiptId) {
       throw new BadRequestException(
         'Incoming QC harus memiliki Goods Receipt ID',
       );
@@ -213,11 +206,10 @@ export class QcInspectionService {
       .executeTakeFirst();
 
     if (!checklist)
-      throw new NotFoundException(
-        'Checklist tidak ditemukan atau tidak aktif',
-      );
+      throw new NotFoundException('Checklist tidak ditemukan atau tidak aktif');
 
-    if (checklist.inspection_type !== dto.inspectionType) {
+    const requestedInspectionType: string = dto.inspectionType;
+    if (checklist.inspection_type !== requestedInspectionType) {
       throw new BadRequestException(
         `Checklist ini untuk tipe inspeksi "${checklist.inspection_type}", ` +
           `bukan "${dto.inspectionType}"`,
@@ -247,8 +239,7 @@ export class QcInspectionService {
         .select('id')
         .executeTakeFirst();
 
-      if (!pr)
-        throw new NotFoundException('Production Result tidak ditemukan');
+      if (!pr) throw new NotFoundException('Production Result tidak ditemukan');
     }
 
     return db.transaction().execute(async (trx) => {
@@ -289,42 +280,73 @@ export class QcInspectionService {
     dto: CompleteInspectionDto,
     inspectedBy: number,
   ) {
-    const inspection = await db
-      .selectFrom('qc_inspections')
-      .where('id', '=', inspectionId)
-      .select(['id', 'status', 'checklist_id', 'uom_id'])
-      .executeTakeFirst();
-
-    if (!inspection)
-      throw new NotFoundException('QC Inspection tidak ditemukan');
-    if (inspection.status !== 'draft') {
-      throw new ConflictException(
-        `Inspeksi berstatus ${inspection.status} tidak bisa diselesaikan`,
-      );
-    }
-
-    // Validasi semua required items harus diisi
-    const requiredItems = await db
-      .selectFrom('qc_checklist_items')
-      .where('checklist_id', '=', inspection.checklist_id)
-      .where('is_required', '=', true)
-      .select('id')
-      .execute();
-
-    const submittedIds = new Set(dto.items.map((i) => i.checklistItemId));
-    const missingRequired = requiredItems.filter(
-      (ri) => !submittedIds.has(ri.id),
-    );
-
-    if (missingRequired.length > 0) {
-      throw new BadRequestException(
-        `${missingRequired.length} parameter wajib belum diisi`,
-      );
-    }
-
     return db.transaction().execute(async (trx) => {
+      const inspection = await trx
+        .selectFrom('qc_inspections')
+        .where('id', '=', inspectionId)
+        .select(['id', 'status', 'checklist_id', 'uom_id'])
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!inspection)
+        throw new NotFoundException('QC Inspection tidak ditemukan');
+      if (inspection.status !== 'draft') {
+        throw new ConflictException(
+          `Inspeksi berstatus ${inspection.status} tidak bisa diselesaikan`,
+        );
+      }
+
+      const requiredItems = await trx
+        .selectFrom('qc_checklist_items')
+        .where('checklist_id', '=', inspection.checklist_id)
+        .where('is_required', '=', true)
+        .select('id')
+        .execute();
+
+      const submittedIds = new Set(dto.items.map((i) => i.checklistItemId));
+      const missingRequired = requiredItems.filter(
+        (ri) => !submittedIds.has(Number(ri.id)),
+      );
+
+      if (missingRequired.length > 0) {
+        throw new BadRequestException(
+          `${missingRequired.length} parameter wajib belum diisi`,
+        );
+      }
+
       // Insert inspection items
       if (dto.items.length > 0) {
+        const paramIds = dto.items
+          .map((i) => i.parameterId)
+          .filter((id): id is number => typeof id === 'number');
+
+        const paramMap = new Map<
+          number,
+          {
+            id: number;
+            value_type: string;
+            min_value: number | null;
+            max_value: number | null;
+          }
+        >();
+
+        if (paramIds.length > 0) {
+          const params = await trx
+            .selectFrom('qc_parameters')
+            .where('id', 'in', paramIds)
+            .select(['id', 'value_type', 'min_value', 'max_value'])
+            .execute();
+
+          for (const p of params) {
+            paramMap.set(Number(p.id), {
+              id: Number(p.id),
+              value_type: p.value_type,
+              min_value: p.min_value !== null ? Number(p.min_value) : null,
+              max_value: p.max_value !== null ? Number(p.max_value) : null,
+            });
+          }
+        }
+
         await trx
           .insertInto('qc_inspection_items')
           .values(
@@ -332,8 +354,19 @@ export class QcInspectionService {
               let isWithinSpec: boolean | null = null;
               if (item.passFailValue !== undefined) {
                 isWithinSpec = item.passFailValue;
-              } else if (item.numericValue !== undefined) {
-                isWithinSpec = true;
+              } else if (item.numericValue !== undefined && item.parameterId) {
+                const param = paramMap.get(item.parameterId);
+                if (param) {
+                  const minOk =
+                    param.min_value === null ||
+                    item.numericValue >= param.min_value;
+                  const maxOk =
+                    param.max_value === null ||
+                    item.numericValue <= param.max_value;
+                  isWithinSpec = minOk && maxOk;
+                } else {
+                  isWithinSpec = true;
+                }
               }
 
               return {
@@ -408,11 +441,19 @@ export class QcInspectionService {
       );
     }
 
-    await db
+    const cancelled = await db
       .updateTable('qc_inspections')
       .set({ status: 'cancelled', updated_at: new Date() })
       .where('id', '=', inspectionId)
-      .execute();
+      .where('status', '=', 'draft')
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!cancelled) {
+      throw new ConflictException(
+        'QC Inspection tidak dapat dibatalkan karena statusnya sudah berubah',
+      );
+    }
 
     return { message: 'QC Inspection berhasil dibatalkan' };
   }
@@ -437,8 +478,22 @@ export class QcInspectionService {
         'qdt.code',
         'qdt.name as defect_name',
         'qdt.severity',
-        db.fn.count<number>('qd.id' as any).as('occurrence_count'),
-        db.fn.sum<number>('qd.quantity_defective' as any).as('total_quantity'),
+        db.fn
+          .count<number>(
+            'qd.id' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('occurrence_count'),
+        db.fn
+          .sum<number>(
+            'qd.quantity_defective' as unknown as ReferenceExpression<
+              TenantSchema,
+              keyof TenantSchema
+            >,
+          )
+          .as('total_quantity'),
       ]);
 
     if (inspectionType) {

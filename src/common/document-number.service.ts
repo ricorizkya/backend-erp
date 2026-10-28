@@ -15,7 +15,8 @@ export type DocType =
   | 'INV'
   | 'PAY'
   | 'WO'
-  | 'QC';
+  | 'QC'
+  | 'JE';
 
 @Injectable()
 export class DocumentNumberService {
@@ -31,10 +32,7 @@ export class DocumentNumberService {
    * Request lain akan menunggu di antrian sampai
    * transaksi ini commit/rollback.
    */
-  async generate(
-    db: Kysely<TenantSchema>,
-    docType: DocType,
-  ): Promise<string> {
+  async generate(db: Kysely<TenantSchema>, docType: DocType): Promise<string> {
     const year = new Date().getFullYear();
 
     // Pastikan row untuk tahun ini sudah ada

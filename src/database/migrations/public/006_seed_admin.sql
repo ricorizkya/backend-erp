@@ -1,5 +1,5 @@
 -- ============================================================
--- SEED DATA: Admin Tenant, User, Role
+-- SEED DATA: Admin Tenant and Role
 -- Dijalankan sekali oleh MigrationService saat startup
 -- ============================================================
 
@@ -38,30 +38,11 @@ FROM public.tenants t
 WHERE t.code = 'admin'
 ON CONFLICT DO NOTHING;
 
--- Insert admin user (password: Admin@1234 - bcrypt hash)
-INSERT INTO public.users (tenant_id, email, password_hash, full_name, is_active)
-SELECT t.id,
-       'admin@synkro.com',
-       '$2b$12$FxzVTa0z/8MAly2pbNE.buqXyJuULvJKsiBK5nEvGGfQ5bg03Sl5m',
-       'Super Administrator',
-       true
-FROM public.tenants t
-WHERE t.code = 'admin'
-ON CONFLICT (email) DO NOTHING;
-
--- Assign role to user
-INSERT INTO public.user_roles (user_id, role_id)
-SELECT u.id, r.id
-FROM public.users u
-JOIN public.tenants t ON t.id = u.tenant_id
-JOIN public.roles r ON r.tenant_id = t.id
-WHERE u.email = 'admin@synkro.com'
-  AND r.name = 'Super Administrator'
-ON CONFLICT DO NOTHING;
-
 -- Insert tenant_secrets (hash_salt untuk HashID encoding)
 INSERT INTO public.tenant_secrets (tenant_id, hash_salt)
-SELECT t.id, 'synkro_admin_salt_2026_erp_hashid'
+SELECT t.id,
+       replace(gen_random_uuid()::text, '-', '') ||
+       replace(gen_random_uuid()::text, '-', '')
 FROM public.tenants t
 WHERE t.code = 'admin'
 ON CONFLICT (tenant_id) DO NOTHING;

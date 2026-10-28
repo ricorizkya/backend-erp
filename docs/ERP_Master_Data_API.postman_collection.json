@@ -1,0 +1,578 @@
+{
+  "info": {
+    "name": "ERP Backend — Master Data CRUD Testing",
+    "description": "Koleksi lengkap untuk testing semua endpoint CRUD data master.\n\nAlur testing yang disarankan:\n1. AUTH: Login dulu → token otomatis tersimpan\n2. FOUNDATION: UoM → Product Category → Attributes\n3. PRODUCT: Create Product → Create Variants\n4. MASTER LAINNYA: Supplier, Customer, Warehouse, Batch\n\nSemua request sudah pakai variable {{baseUrl}} dan {{accessToken}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "tenantCode", "value": "admin", "type": "string" },
+    { "key": "uomId", "value": "", "type": "string" },
+    { "key": "uomId2", "value": "", "type": "string" },
+    { "key": "categoryId", "value": "", "type": "string" },
+    { "key": "attributeId", "value": "", "type": "string" },
+    { "key": "attributeValueId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "variantId", "value": "", "type": "string" },
+    { "key": "supplierId", "value": "", "type": "string" },
+    { "key": "customerId", "value": "", "type": "string" },
+    { "key": "warehouseId", "value": "", "type": "string" },
+    { "key": "batchId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 AUTH",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 200) {", "  const res = pm.response.json();", "  pm.collectionVariables.set('accessToken', res.data.accessToken);", "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);", "  pm.test('Login berhasil', () => pm.response.to.have.status(200));", "  pm.test('Dapat accessToken', () => pm.expect(res.data.accessToken).to.be.a('string'));", "} else { console.log('Login gagal:', pm.response.json()); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@synkro.com\",\n  \"password\": \"Admin@1234\",\n  \"tenantCode\": \"{{tenantCode}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📏 UOM (Unit of Measure)",
+      "item": [
+        {
+          "name": "GET - List semua UoM",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const res = pm.response.json();", "pm.test('Response berisi data', () => pm.expect(res.data).to.be.an('array'));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "POST - Create UoM (Liter)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('uomId', res.data.id); pm.test('UoM Liter dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Liter\",\n  \"symbol\": \"L\"\n}" },
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "POST - Create UoM (Galon)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('uomId2', res.data.id); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Galon\",\n  \"symbol\": \"gln\"\n}" },
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "POST - Create UoM (Unit/Pcs)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Unit\",\n  \"symbol\": \"pcs\"\n}" },
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "POST - Create UoM (Kilogram)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Kilogram\",\n  \"symbol\": \"kg\"\n}" },
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "GET - Detail UoM by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/uom/{{uomId}}", "host": ["{{baseUrl}}"], "path": ["uom", "{{uomId}}"] }
+          }
+        },
+        {
+          "name": "PATCH - Update UoM",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Liter (updated)\",\n  \"symbol\": \"L\"\n}" },
+            "url": { "raw": "{{baseUrl}}/uom/{{uomId}}", "host": ["{{baseUrl}}"], "path": ["uom", "{{uomId}}"] }
+          }
+        },
+        {
+          "name": "GET - List UoM Conversions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/uom/conversions", "host": ["{{baseUrl}}"], "path": ["uom", "conversions"] }
+          }
+        },
+        {
+          "name": "POST - UoM Conversion (1 Galon = 19 Liter)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fromUomId\": \"{{uomId2}}\",\n  \"toUomId\": \"{{uomId}}\",\n  \"factor\": 19\n}" },
+            "url": { "raw": "{{baseUrl}}/uom/conversions", "host": ["{{baseUrl}}"], "path": ["uom", "conversions"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📂 Product Categories",
+      "item": [
+        {
+          "name": "GET - List semua Kategori",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/product-categories", "host": ["{{baseUrl}}"], "path": ["product-categories"] }
+          }
+        },
+        {
+          "name": "POST - Create Kategori (Air Minum)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('categoryId', res.data.id); pm.test('Kategori dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Air Minum\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-categories", "host": ["{{baseUrl}}"], "path": ["product-categories"] }
+          }
+        },
+        {
+          "name": "POST - Create Kategori (Bahan Baku Produksi)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Bahan Baku Produksi\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-categories", "host": ["{{baseUrl}}"], "path": ["product-categories"] }
+          }
+        },
+        {
+          "name": "POST - Create Sub-Kategori (Galon Isi — child)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Galon Isi\",\n  \"parentId\": \"{{categoryId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-categories", "host": ["{{baseUrl}}"], "path": ["product-categories"] }
+          }
+        },
+        {
+          "name": "PATCH - Update Kategori",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Air Minum & Minuman\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["product-categories", "{{categoryId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Attributes & Values",
+      "item": [
+        {
+          "name": "GET - List semua Attributes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/attributes", "host": ["{{baseUrl}}"], "path": ["attributes"] }
+          }
+        },
+        {
+          "name": "POST - Create Attribute (Volume)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('attributeId', res.data.id); pm.test('Attribute dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Volume\"\n}" },
+            "url": { "raw": "{{baseUrl}}/attributes", "host": ["{{baseUrl}}"], "path": ["attributes"] }
+          }
+        },
+        {
+          "name": "POST - Add Value (19 Liter)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('attributeValueId', res.data.id); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": \"19 Liter\"\n}" },
+            "url": { "raw": "{{baseUrl}}/attributes/{{attributeId}}/values", "host": ["{{baseUrl}}"], "path": ["attributes", "{{attributeId}}", "values"] }
+          }
+        },
+        {
+          "name": "POST - Add Value (600ml)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": \"600ml\"\n}" },
+            "url": { "raw": "{{baseUrl}}/attributes/{{attributeId}}/values", "host": ["{{baseUrl}}"], "path": ["attributes", "{{attributeId}}", "values"] }
+          }
+        },
+        {
+          "name": "DELETE - Hapus Attribute Value",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/attributes/values/{{attributeValueId}}", "host": ["{{baseUrl}}"], "path": ["attributes", "values", "{{attributeValueId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Products & Variants",
+      "item": [
+        {
+          "name": "GET - List semua Produk (dengan filter)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products?page=1&limit=10&isActive=true", "host": ["{{baseUrl}}"], "path": ["products"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }, { "key": "isActive", "value": "true" }] }
+          }
+        },
+        {
+          "name": "POST - Create Produk Air Galon 19L (can_be_manufactured)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('productId', res.data.id); if (res.data.variants && res.data.variants.length > 0) { pm.collectionVariables.set('variantId', res.data.variants[0].id); } pm.test('Produk dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"AIR-GALON-19L\",\n  \"name\": \"Air Minum Galon 19 Liter\",\n  \"baseUomId\": \"{{uomId2}}\",\n  \"purchaseUomId\": \"{{uomId2}}\",\n  \"salesUomId\": \"{{uomId2}}\",\n  \"canBePurchased\": false,\n  \"canBeSold\": true,\n  \"canBeManufactured\": true,\n  \"hasVariant\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "POST - Create Produk Air Baku (Bahan Baku)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"AIR-BAKU\",\n  \"name\": \"Air Baku (Sumber)\",\n  \"baseUomId\": \"{{uomId}}\",\n  \"purchaseUomId\": \"{{uomId}}\",\n  \"salesUomId\": \"{{uomId}}\",\n  \"canBePurchased\": true,\n  \"canBeSold\": false,\n  \"canBeManufactured\": false,\n  \"hasVariant\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "POST - Create Produk Galon Kosong",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"GALON-KOSONG\",\n  \"name\": \"Galon Kosong 19L\",\n  \"baseUomId\": \"{{uomId2}}\",\n  \"purchaseUomId\": \"{{uomId2}}\",\n  \"salesUomId\": \"{{uomId2}}\",\n  \"canBePurchased\": true,\n  \"canBeSold\": false,\n  \"canBeManufactured\": false,\n  \"hasVariant\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "POST - Create Produk Filter Karbon Aktif",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"FILTER-KARBON\",\n  \"name\": \"Filter Karbon Aktif\",\n  \"baseUomId\": \"{{uomId2}}\",\n  \"purchaseUomId\": \"{{uomId2}}\",\n  \"salesUomId\": \"{{uomId2}}\",\n  \"canBePurchased\": true,\n  \"canBeSold\": false,\n  \"canBeManufactured\": false,\n  \"hasVariant\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "GET - Detail Produk by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "PATCH - Update Produk",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Air Minum Galon 19L (Isi Ulang)\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "GET - List Variants dari Produk",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/variants", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "variants"] }
+          }
+        },
+        {
+          "name": "PATCH - Update Variant (Harga & Min Stock)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"costPrice\": 3500,\n  \"salePrice\": 6000,\n  \"minStock\": 10\n}" },
+            "url": { "raw": "{{baseUrl}}/products/variants/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["products", "variants", "{{variantId}}"] }
+          }
+        },
+        {
+          "name": "DELETE - Soft Delete Produk",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏭 Suppliers",
+      "item": [
+        {
+          "name": "GET - List semua Supplier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/suppliers", "host": ["{{baseUrl}}"], "path": ["suppliers"] }
+          }
+        },
+        {
+          "name": "POST - Create Supplier (CV Air Bersih Nusantara)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('supplierId', res.data.id); pm.test('Supplier dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"SUP-001\",\n  \"name\": \"CV Air Bersih Nusantara\",\n  \"phone\": \"081234567890\",\n  \"email\": \"cv.airbersih@gmail.com\",\n  \"address\": \"Jl. Sumber Mata Air No. 10, Bandung\",\n  \"npwp\": \"12.345.678.9-001.000\",\n  \"paymentTerm\": 30\n}" },
+            "url": { "raw": "{{baseUrl}}/suppliers", "host": ["{{baseUrl}}"], "path": ["suppliers"] }
+          }
+        },
+        {
+          "name": "POST - Create Supplier (Toko Filter Makmur)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"SUP-002\",\n  \"name\": \"Toko Filter Makmur\",\n  \"phone\": \"022-88889999\",\n  \"address\": \"Jl. Industri No. 25, Bandung\",\n  \"paymentTerm\": 14\n}" },
+            "url": { "raw": "{{baseUrl}}/suppliers", "host": ["{{baseUrl}}"], "path": ["suppliers"] }
+          }
+        },
+        {
+          "name": "GET - Detail Supplier by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/suppliers/{{supplierId}}", "host": ["{{baseUrl}}"], "path": ["suppliers", "{{supplierId}}"] }
+          }
+        },
+        {
+          "name": "PATCH - Update Supplier",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"paymentTerm\": 45\n}" },
+            "url": { "raw": "{{baseUrl}}/suppliers/{{supplierId}}", "host": ["{{baseUrl}}"], "path": ["suppliers", "{{supplierId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Customers",
+      "item": [
+        {
+          "name": "GET - List semua Customer",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "POST - Create Customer (Warung Bu Siti)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('customerId', res.data.id); pm.test('Customer dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"CUST-001\",\n  \"name\": \"Warung Bu Siti\",\n  \"phone\": \"082200001111\",\n  \"address\": \"Jl. Merdeka No. 5, RT 03/02, Bandung\",\n  \"creditLimit\": 500000,\n  \"paymentTerm\": 7\n}" },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "POST - Create Customer (PT Sejahtera Bersama)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"CUST-002\",\n  \"name\": \"PT Sejahtera Bersama\",\n  \"phone\": \"022-77778888\",\n  \"email\": \"purchasing@sejahtera.co.id\",\n  \"address\": \"Jl. Asia Afrika No. 100, Bandung\",\n  \"npwp\": \"98.765.432.1-001.000\",\n  \"creditLimit\": 5000000,\n  \"paymentTerm\": 30\n}" },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "GET - Detail Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers", "{{customerId}}"] }
+          }
+        },
+        {
+          "name": "PATCH - Update Customer (naikan credit limit)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"creditLimit\": 1000000\n}" },
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers", "{{customerId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏠 Warehouses & Locations",
+      "item": [
+        {
+          "name": "GET - List semua Warehouse",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/warehouses", "host": ["{{baseUrl}}"], "path": ["warehouses"] }
+          }
+        },
+        {
+          "name": "POST - Create Warehouse (Gudang Utama / Finished Goods)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('warehouseId', res.data.id); pm.test('Warehouse dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"WH-MAIN\",\n  \"name\": \"Gudang Utama Depot\",\n  \"type\": \"finished_goods\",\n  \"address\": \"Jl. Depot Air No. 1, Bandung\"\n}" },
+            "url": { "raw": "{{baseUrl}}/warehouses", "host": ["{{baseUrl}}"], "path": ["warehouses"] }
+          }
+        },
+        {
+          "name": "POST - Create Warehouse (Gudang Bahan Baku)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"WH-RAW\",\n  \"name\": \"Gudang Bahan Baku\",\n  \"type\": \"raw_material\",\n  \"address\": \"Jl. Depot Air No. 1, Bandung\"\n}" },
+            "url": { "raw": "{{baseUrl}}/warehouses", "host": ["{{baseUrl}}"], "path": ["warehouses"] }
+          }
+        },
+        {
+          "name": "GET - Detail Warehouse",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/warehouses/{{warehouseId}}", "host": ["{{baseUrl}}"], "path": ["warehouses", "{{warehouseId}}"] }
+          }
+        },
+        {
+          "name": "GET - List Warehouse Locations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/warehouse-locations?warehouseId={{warehouseId}}", "host": ["{{baseUrl}}"], "path": ["warehouse-locations"], "query": [{ "key": "warehouseId", "value": "{{warehouseId}}" }] }
+          }
+        },
+        {
+          "name": "POST - Create Warehouse Location",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"warehouseId\": \"{{warehouseId}}\",\n  \"code\": \"LOC-A1\",\n  \"name\": \"Rak A - Baris 1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/warehouse-locations", "host": ["{{baseUrl}}"], "path": ["warehouse-locations"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔬 Batches (Lot Tracking)",
+      "item": [
+        {
+          "name": "GET - List Batch by Variant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/variants/{{variantId}}/batches", "host": ["{{baseUrl}}"], "path": ["products", "variants", "{{variantId}}", "batches"] }
+          }
+        },
+        {
+          "name": "POST - Create Batch (BTH-2026-001)",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { const res = pm.response.json(); pm.collectionVariables.set('batchId', res.data.id); pm.test('Batch dibuat', () => pm.response.to.have.status(201)); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"variantId\": \"{{variantId}}\",\n  \"batchNumber\": \"BTH-2026-001\",\n  \"manufactureDate\": \"2026-07-31\",\n  \"expiryDate\": \"2026-10-31\",\n  \"origin\": \"Sumber Mata Air Bandung\",\n  \"notes\": \"Batch produksi perdana depot air\"\n}" },
+            "url": { "raw": "{{baseUrl}}/batches", "host": ["{{baseUrl}}"], "path": ["batches"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Stock Info",
+      "item": [
+        {
+          "name": "GET - Stock Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/stock-summary", "host": ["{{baseUrl}}"], "path": ["stock-summary"] }
+          }
+        },
+        {
+          "name": "GET - Available Stock",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/available-stock", "host": ["{{baseUrl}}"], "path": ["available-stock"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Validation Tests",
+      "item": [
+        {
+          "name": "POST UoM - Body kosong (expect 400)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Harus return 400', () => pm.response.to.have.status(400));", "const res = pm.response.json();", "pm.test('Ada pesan error validasi', () => pm.expect(res.message).to.exist);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/uom", "host": ["{{baseUrl}}"], "path": ["uom"] }
+          }
+        },
+        {
+          "name": "POST Product - Tanpa required fields (expect 400)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Harus return 400', () => pm.response.to.have.status(400));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"TEST\",\n  \"name\": \"Test Product\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "GET - ID tidak valid (expect 404 atau 400)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Harus return 4xx', () => pm.expect(pm.response.code).to.be.oneOf([400, 404]));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/INVALID_HASH_ID", "host": ["{{baseUrl}}"], "path": ["products", "INVALID_HASH_ID"] }
+          }
+        },
+        {
+          "name": "GET tanpa Token (expect 401)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Harus return 401', () => pm.response.to.have.status(401));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        }
+      ]
+    }
+  ]
+}
