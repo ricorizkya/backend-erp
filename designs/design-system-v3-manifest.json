@@ -1,0 +1,359 @@
+{
+  "components": {
+    "button/primary/default": 36,
+    "button/primary/hover": 38,
+    "button/primary/focus": 40,
+    "button/primary/disabled": 42,
+    "button/primary/loading": 44,
+    "button/outline/default": 47,
+    "button/outline/hover": 49,
+    "button/outline/focus": 51,
+    "button/outline/disabled": 53,
+    "button/ghost/default": 55,
+    "button/ghost/hover": 57,
+    "button/ghost/focus": 59,
+    "button/ghost/disabled": 61,
+    "button/destructive/default": 63,
+    "button/destructive/hover": 65,
+    "button/destructive/focus": 67,
+    "button/destructive/disabled": 69,
+    "input/empty": 75,
+    "input/filled": 77,
+    "input/focus": 79,
+    "input/invalid": 81,
+    "input/disabled": 83,
+    "badge/neutral": 89,
+    "badge/outline": 91,
+    "badge/success": 93,
+    "badge/warning": 95,
+    "badge/destructive": 97,
+    "checkbox/unchecked": 103,
+    "checkbox/checked": 104,
+    "checkbox/indeterminate": 106,
+    "checkbox/focus": 108,
+    "checkbox/disabled": 109,
+    "select/default": 114,
+    "select/focus": 117,
+    "select/invalid": 120,
+    "select/disabled": 123,
+    "nav/default": 130,
+    "nav/hover": 132,
+    "nav/active": 134,
+    "nav/focus": 136,
+    "skeleton/title": 142,
+    "skeleton/cell": 143,
+    "sidebar/expanded/workspace": 468,
+    "sidebar/expanded/produk": 562,
+    "sidebar/collapsed/produk": 656,
+    "metric": 699,
+    "table/products": 703,
+    "field/input/default": 1746,
+    "field/input/invalid": 1750,
+    "field/input/disabled": 1755,
+    "field/select/default": 1759,
+    "field/select/invalid": 1764,
+    "card": 1799,
+    "alert/error": 1802,
+    "alert/warning": 1808,
+    "alert/success": 1814,
+    "empty/nodata": 1821,
+    "empty/noresults": 1828,
+    "empty/denied": 1835,
+    "rowmenu/read": 1841,
+    "rowmenu/write": 1844,
+    "rowmenu/delete": 1849,
+    "combobox/options": 1857,
+    "combobox/noresults": 1870,
+    "combobox/loading": 1876,
+    "combobox/denied": 1882,
+    "dialog/deactivate": 1889,
+    "tooltip": 1897,
+    "separator": 1899,
+    "sheet/navigation": 2824
+  },
+  "sets": {
+    "Button": {
+      "id": 71
+    },
+    "Input": {
+      "id": 85
+    },
+    "Badge": {
+      "id": 99
+    },
+    "Checkbox": {
+      "id": 110
+    },
+    "Select": {
+      "id": 126
+    },
+    "SidebarMenuButton": {
+      "id": 138
+    },
+    "Sidebar": {
+      "id": 698
+    },
+    "Field": {
+      "id": 1770
+    },
+    "Alert": {
+      "id": 1820
+    },
+    "Empty": {
+      "id": 1840
+    },
+    "Row action menu": {
+      "id": 1856
+    },
+    "Combobox popover": {
+      "id": 1888
+    }
+  },
+  "screens": {
+    "A02": 894,
+    "M01": 1220,
+    "M02": 1554,
+    "A02-1024": 2046,
+    "M01-1024": 2320,
+    "M02-1024": 2602,
+    "M02-390": 2738
+  },
+  "tokens": {
+    "background": "VariableID:1",
+    "foreground": "VariableID:2",
+    "card": "VariableID:3",
+    "card-foreground": "VariableID:4",
+    "popover": "VariableID:5",
+    "popover-foreground": "VariableID:6",
+    "primary": "VariableID:7",
+    "primary-foreground": "VariableID:8",
+    "primary-hover": "VariableID:9",
+    "secondary": "VariableID:10",
+    "secondary-foreground": "VariableID:11",
+    "muted": "VariableID:12",
+    "muted-foreground": "VariableID:13",
+    "accent": "VariableID:14",
+    "accent-foreground": "VariableID:15",
+    "soft-green": "VariableID:16",
+    "border": "VariableID:17",
+    "input": "VariableID:18",
+    "ring": "VariableID:19",
+    "destructive": "VariableID:20",
+    "destructive-foreground": "VariableID:21",
+    "destructive-subtle": "VariableID:22",
+    "success": "VariableID:23",
+    "success-subtle": "VariableID:24",
+    "warning": "VariableID:25",
+    "warning-subtle": "VariableID:26",
+    "sidebar": "VariableID:27",
+    "sidebar-foreground": "VariableID:28",
+    "sidebar-primary": "VariableID:29",
+    "sidebar-primary-foreground": "VariableID:30",
+    "sidebar-accent": "VariableID:31",
+    "sidebar-accent-foreground": "VariableID:32",
+    "sidebar-border": "VariableID:33",
+    "sidebar-ring": "VariableID:34",
+    "radius/control": "VariableID:35",
+    "radius/surface": "VariableID:36",
+    "space/field": "VariableID:37",
+    "space/group": "VariableID:38",
+    "size/control": "VariableID:39",
+    "size/icon": "VariableID:40",
+    "type/body": "VariableID:41",
+    "type/helper": "VariableID:42"
+  },
+  "notes": [],
+  "foundation_page": 1,
+  "collection": "VariableCollectionId:1",
+  "component_board": 2,
+  "font": "Geist",
+  "fixture": {
+    "total": 8,
+    "purchased": 5,
+    "manufactured": 3,
+    "rows": [
+      [
+        "RM-BLT-001",
+        "Baut M8 \u00d7 30 mm",
+        "Bahan Baku",
+        "pcs",
+        true,
+        false,
+        false
+      ],
+      [
+        "FG-BRK-001",
+        "Bracket L 40 mm",
+        "Barang Jadi",
+        "pcs",
+        false,
+        true,
+        true
+      ],
+      [
+        "RM-CAT-001",
+        "Cat Powder Coating Hitam",
+        "Bahan Baku",
+        "kg",
+        true,
+        false,
+        false
+      ],
+      [
+        "FG-HNG-001",
+        "Engsel Panel 60 mm",
+        "Barang Jadi",
+        "pcs",
+        false,
+        true,
+        true
+      ],
+      [
+        "RM-PLT-001",
+        "Pelat Baja SPCC 1 mm",
+        "Bahan Baku",
+        "kg",
+        true,
+        false,
+        false
+      ],
+      [
+        "RM-PIP-001",
+        "Pipa Baja \u00d825 mm",
+        "Bahan Baku",
+        "m",
+        true,
+        false,
+        false
+      ],
+      [
+        "FG-RCK-001",
+        "Rak Komponen Tipe A",
+        "Barang Jadi",
+        "pcs",
+        false,
+        true,
+        true
+      ],
+      [
+        "RM-WIR-001",
+        "Wire Mesh 2 mm",
+        "Bahan Baku",
+        "m\u00b2",
+        true,
+        false,
+        false
+      ]
+    ]
+  },
+  "desktop_page": 893,
+  "qa_page": 1900,
+  "state_board": 1901,
+  "verification": {
+    "captures": {
+      "A02": {
+        "node": 894,
+        "path": "designs/screenshots/v3-A02-workspace-1440.png"
+      },
+      "M01": {
+        "node": 1220,
+        "path": "designs/screenshots/v3-M01-products-1440.png"
+      },
+      "M02": {
+        "node": 1554,
+        "path": "designs/screenshots/v3-M02-product-form-1440.png"
+      },
+      "A02-1024": {
+        "node": 2046,
+        "path": "designs/screenshots/v3-A02-tablet-1024.png"
+      },
+      "M01-1024": {
+        "node": 2320,
+        "path": "designs/screenshots/v3-M01-tablet-1024.png"
+      },
+      "M02-1024": {
+        "node": 2602,
+        "path": "designs/screenshots/v3-M02-tablet-1024.png"
+      },
+      "M02-390": {
+        "node": 2738,
+        "path": "designs/screenshots/v3-M02-mobile-390.png"
+      }
+    },
+    "document": {
+      "name": "ERP \u00b7 shadcn Nova \u00b7 V3 pilots",
+      "path": "/Users/rico/Documents/Project/ERP/backend-erp/designs/app-ui-shadcn-v3.figcraft",
+      "pages": 3,
+      "dirty": false
+    },
+    "variant_switch": "Primary default \u2192 hover \u2192 default; label override retained",
+    "field_editability": "Outer Label and exposed nested Input Label edited successfully",
+    "font_report": {
+      "embeddedFontFiles": 0,
+      "externalPenpotFontRefs": [],
+      "fontLicenseNotices": 0,
+      "fonts": [
+        {
+          "available": true,
+          "family": "Geist",
+          "layers": [
+            "Aktif",
+            "Badge \u00b7 neutral status, capability, success and warning",
+            "Batal",
+            "Berhasil",
+            "Button \u00b7 32 px / primary, outline, ghost",
+            "Dibeli",
+            "ERP / Design system V3",
+            "Input \u00b7 label-independent control",
+            "Masukkan nilai",
+            "Nonaktifkan",
+            "Perlu ditinjau",
+            "RM-PLT-001",
+            "Selengkapnya",
+            "Simpan produk",
+            "accent",
+            "background",
+            "border",
+            "destructive",
+            "foreground",
+            "muted",
+            "primary",
+            "shadcn Nova \u00b7 compact controls \u00b7 native editable compon",
+            "success",
+            "warning",
+            "\u25cc"
+          ]
+        }
+      ],
+      "missing": 0,
+      "total": 1
+    },
+    "reopened": true,
+    "reopen_pixel_match": [
+      "A02",
+      "M01",
+      "M02"
+    ],
+    "counts": {
+      "page": 3,
+      "frame": 1065,
+      "text": 786,
+      "component": 70,
+      "componentSet": 12,
+      "vector": 213,
+      "instance": 234,
+      "ellipse": 138,
+      "rectangle": 6
+    },
+    "native_sha256": "d15049dc7963980892a41e977f4b62f2636a74e80b870b1846239d9adba501c3",
+    "bounds_check": {
+      "A02": 0,
+      "M01": 0,
+      "M02": 0,
+      "A02-1024": 0,
+      "M01-1024": 0,
+      "M02-1024": 0,
+      "M02-390": 0
+    }
+  }
+}

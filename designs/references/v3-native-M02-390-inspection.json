@@ -1,0 +1,3617 @@
+{
+  "absoluteBounds": {
+    "height": 1460.0,
+    "width": 390.0,
+    "x": 3300.0,
+    "y": 1500.0
+  },
+  "boundVariables": {
+    "fill": "VariableID:1"
+  },
+  "children": [
+    {
+      "absoluteBounds": {
+        "height": 56.0,
+        "width": 390.0,
+        "x": 3300.0,
+        "y": 1500.0
+      },
+      "boundVariables": {
+        "fill": "VariableID:3",
+        "stroke": "VariableID:17"
+      },
+      "children": [
+        {
+          "absoluteBounds": {
+            "height": 16.0,
+            "width": 16.0,
+            "x": 3316.0,
+            "y": 1519.5
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 14.0,
+                "width": 14.0,
+                "x": 3317.0,
+                "y": 1520.5
+              },
+              "boundVariables": {
+                "stroke": "VariableID:13"
+              },
+              "constraints": {
+                "horizontal": "left",
+                "vertical": "top"
+              },
+              "height": 14.0,
+              "id": 2741,
+              "name": "Stroke",
+              "segments": 5,
+              "strokeAlign": "center",
+              "strokeJoin": "round",
+              "strokeWeight": 1.4,
+              "strokes": [
+                {
+                  "color": "#65746B",
+                  "type": "solid"
+                }
+              ],
+              "type": "VECTOR",
+              "vertices": 6,
+              "width": 14.0,
+              "x": 1.0,
+              "y": 1.0
+            }
+          ],
+          "clip": false,
+          "height": 16.0,
+          "id": 2740,
+          "name": "Icon / panel",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "fixed"
+          },
+          "type": "FRAME",
+          "width": 16.0,
+          "x": 16.0,
+          "y": 19.5
+        },
+        {
+          "absoluteBounds": {
+            "height": 20.0,
+            "width": 172.0,
+            "x": 3348.0,
+            "y": 1517.5
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 20.0,
+                "width": 46.0,
+                "x": 3348.0,
+                "y": 1517.5
+              },
+              "boundVariables": {
+                "fill": "VariableID:13",
+                "fontSize": "VariableID:41"
+              },
+              "characters": "Produk",
+              "fills": [
+                {
+                  "color": "#65746B",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 14.0,
+              "fontStyle": "Regular",
+              "height": 20.0,
+              "id": 2742,
+              "letterSpacing": "0%",
+              "lineHeight": "20",
+              "name": "Produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 46.0,
+              "x": 0.0,
+              "y": 0.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 14.0,
+                "width": 14.0,
+                "x": 3400.0,
+                "y": 1520.5
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 12.0,
+                    "width": 6.0,
+                    "x": 3404.0,
+                    "y": 1521.5
+                  },
+                  "boundVariables": {
+                    "stroke": "VariableID:13"
+                  },
+                  "constraints": {
+                    "horizontal": "left",
+                    "vertical": "top"
+                  },
+                  "height": 12.0,
+                  "id": 2744,
+                  "name": "Stroke",
+                  "segments": 2,
+                  "strokeAlign": "center",
+                  "strokeJoin": "round",
+                  "strokeWeight": 1.4,
+                  "strokes": [
+                    {
+                      "color": "#65746B",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "VECTOR",
+                  "vertices": 3,
+                  "width": 6.0,
+                  "x": 4.0,
+                  "y": 1.0
+                }
+              ],
+              "clip": false,
+              "height": 14.0,
+              "id": 2743,
+              "name": "Icon / chevron",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 14.0,
+              "x": 52.0,
+              "y": 3.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 20.0,
+                "width": 100.0,
+                "x": 3420.0,
+                "y": 1517.5
+              },
+              "boundVariables": {
+                "fill": "VariableID:2",
+                "fontSize": "VariableID:41"
+              },
+              "characters": "Tambah produk",
+              "fills": [
+                {
+                  "color": "#1E2A24",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 14.0,
+              "fontStyle": "Regular",
+              "height": 20.0,
+              "id": 2745,
+              "letterSpacing": "0%",
+              "lineHeight": "20",
+              "name": "Tambah produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 100.0,
+              "x": 72.0,
+              "y": 0.0
+            }
+          ],
+          "clip": true,
+          "height": 20.0,
+          "id": 2939,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "center",
+            "crossGap": 10.0,
+            "gap": 6.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "horizontal",
+            "padding": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Breadcrumb / list",
+          "sizing": {
+            "horizontal": "hug",
+            "vertical": "fixed"
+          },
+          "type": "FRAME",
+          "width": 172.0,
+          "x": 48.0,
+          "y": 17.5
+        }
+      ],
+      "clip": true,
+      "fills": [
+        {
+          "color": "#FFFFFF",
+          "type": "solid"
+        }
+      ],
+      "height": 56.0,
+      "id": 2739,
+      "layout": {
+        "columnTracks": [],
+        "contentAlign": "auto",
+        "crossAlign": "center",
+        "crossGap": 10.0,
+        "gap": 16.0,
+        "gridColumns": 2,
+        "gridRows": 2,
+        "mainAlign": "min",
+        "mode": "horizontal",
+        "padding": [
+          0.0,
+          16.0,
+          0.0,
+          16.0
+        ],
+        "reverseZ": false,
+        "rowTracks": [],
+        "strokesIncluded": true,
+        "wrap": false
+      },
+      "name": "Mobile header / navigation trigger",
+      "sizing": {
+        "horizontal": "fixed",
+        "vertical": "fixed"
+      },
+      "strokeAlign": "inside",
+      "strokeSides": [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "strokeWeight": 1.0,
+      "strokes": [
+        {
+          "color": "#DCE3DE",
+          "type": "solid"
+        }
+      ],
+      "type": "FRAME",
+      "width": 390.0,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "absoluteBounds": {
+        "height": 1404.0,
+        "width": 390.0,
+        "x": 3300.0,
+        "y": 1556.0
+      },
+      "children": [
+        {
+          "absoluteBounds": {
+            "height": 32.0,
+            "width": 178.0,
+            "x": 3316.0,
+            "y": 1572.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:2"
+          },
+          "characters": "Tambah produk",
+          "fills": [
+            {
+              "color": "#1E2A24",
+              "type": "solid"
+            }
+          ],
+          "fontFamily": "Geist",
+          "fontSize": 24.0,
+          "fontStyle": "Semi Bold",
+          "height": 32.0,
+          "id": 2747,
+          "letterSpacing": "0%",
+          "lineHeight": "32",
+          "name": "Tambah produk",
+          "sizing": {
+            "horizontal": "hug",
+            "vertical": "hug"
+          },
+          "textAlign": "left",
+          "textAutoResize": "widthAndHeight",
+          "type": "TEXT",
+          "width": 178.0,
+          "x": 16.0,
+          "y": 16.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 40.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 1624.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:13",
+            "fontSize": "VariableID:41"
+          },
+          "characters": "Lengkapi master produk sebelum digunakan dalam transaksi.",
+          "fills": [
+            {
+              "color": "#65746B",
+              "type": "solid"
+            }
+          ],
+          "fontFamily": "Geist",
+          "fontSize": 14.0,
+          "fontStyle": "Regular",
+          "height": 40.0,
+          "id": 2748,
+          "letterSpacing": "0%",
+          "lineHeight": "20",
+          "name": "Lengkapi master produk sebelum digunakan dalam transaks",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "hug"
+          },
+          "textAlign": "left",
+          "textAutoResize": "height",
+          "type": "TEXT",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 68.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 402.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 1684.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:3",
+            "stroke": "VariableID:17"
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 24.0,
+                "width": 127.0,
+                "x": 3333.0,
+                "y": 1701.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:2"
+              },
+              "characters": "Informasi produk",
+              "fills": [
+                {
+                  "color": "#1E2A24",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 16.0,
+              "fontStyle": "Medium",
+              "height": 24.0,
+              "id": 2750,
+              "letterSpacing": "0%",
+              "lineHeight": "24",
+              "name": "Informasi produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 127.0,
+              "x": 17.0,
+              "y": 17.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 1745.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 93.0,
+                    "x": 3333.0,
+                    "y": 1745.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Kode produk *",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2752,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Kode produk *",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 93.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 1773.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 84.0,
+                        "x": 3344.0,
+                        "y": 1779.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "RM-PLT-002",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2754,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "RM-PLT-001",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 84.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "RM-PLT-002"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2753,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 77,
+                  "mainComponentName": "State=Filled",
+                  "name": "Component 2",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2751,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Kode produk",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 61.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 1825.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 98.0,
+                    "x": 3333.0,
+                    "y": 1825.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Nama produk *",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2756,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Nama produk *",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 98.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 1853.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 155.0,
+                        "x": 3344.0,
+                        "y": 1859.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Pelat Baja SPCC 1,5 mm",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2758,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "RM-PLT-001",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 155.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Pelat Baja SPCC 1,5 mm"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2757,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 77,
+                  "mainComponentName": "State=Filled",
+                  "name": "Component 2",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2755,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Nama produk",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 141.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 1905.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 122.0,
+                    "x": 3333.0,
+                    "y": 1905.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Kategori (opsional)",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2760,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Kategori (opsional)",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 122.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 1933.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 78.0,
+                        "x": 3344.0,
+                        "y": 1939.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Bahan Baku",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2762,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Pilih satuan",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 78.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 11.0,
+                        "x": 3637.0,
+                        "y": 1939.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "\u2304",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2763,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "\u2304",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 304.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Bahan Baku"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2761,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "spaceBetween",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 114,
+                  "mainComponentName": "State=Default",
+                  "name": "Component 5",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2759,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Kategori",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 221.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 84.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 1985.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 129.0,
+                    "x": 3333.0,
+                    "y": 1985.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Deskripsi (opsional)",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2765,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Deskripsi (opsional)",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 129.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 2013.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:12",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 123.0,
+                        "x": 3344.0,
+                        "y": 2019.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Tidak ada deskripsi",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2767,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "RM-PLT-001",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 123.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Tidak ada deskripsi"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#EFF2F0",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2766,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 83,
+                  "mainComponentName": "State=Disabled",
+                  "name": "Component 2",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 16.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 2053.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:13",
+                    "fontSize": "VariableID:42"
+                  },
+                  "characters": "Pengubahan deskripsi belum tersedia.",
+                  "fills": [
+                    {
+                      "color": "#65746B",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 12.0,
+                  "fontStyle": "Regular",
+                  "height": 16.0,
+                  "id": 2768,
+                  "letterSpacing": "0%",
+                  "lineHeight": "16",
+                  "name": "Pengubahan deskripsi belum tersedia.",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "height",
+                  "type": "TEXT",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 68.0
+                }
+              ],
+              "clip": true,
+              "height": 84.0,
+              "id": 2764,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Deskripsi",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 301.0
+            }
+          ],
+          "clip": true,
+          "cornerRadius": 12.0,
+          "fills": [
+            {
+              "color": "#FFFFFF",
+              "type": "solid"
+            }
+          ],
+          "height": 402.0,
+          "id": 2749,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "min",
+            "crossGap": 10.0,
+            "gap": 20.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "vertical",
+            "padding": [
+              16.0,
+              16.0,
+              16.0,
+              16.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Informasi produk",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "hug"
+          },
+          "strokeAlign": "inside",
+          "strokeWeight": 1.0,
+          "strokes": [
+            {
+              "color": "#DCE3DE",
+              "type": "solid"
+            }
+          ],
+          "type": "FRAME",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 128.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 298.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 2106.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:3",
+            "stroke": "VariableID:17"
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 24.0,
+                "width": 110.0,
+                "x": 3333.0,
+                "y": 2123.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:2"
+              },
+              "characters": "Satuan produk",
+              "fills": [
+                {
+                  "color": "#1E2A24",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 16.0,
+              "fontStyle": "Medium",
+              "height": 24.0,
+              "id": 2770,
+              "letterSpacing": "0%",
+              "lineHeight": "24",
+              "name": "Satuan produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 110.0,
+              "x": 17.0,
+              "y": 17.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2167.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 97.0,
+                    "x": 3333.0,
+                    "y": 2167.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Satuan dasar *",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2772,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Satuan dasar *",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 97.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 2195.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 84.0,
+                        "x": 3344.0,
+                        "y": 2201.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Kilogram (kg)",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2774,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Pilih satuan",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 84.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 11.0,
+                        "x": 3637.0,
+                        "y": 2201.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "\u2304",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2775,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "\u2304",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 304.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Kilogram (kg)"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2773,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "spaceBetween",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 114,
+                  "mainComponentName": "State=Default",
+                  "name": "Component 5",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2771,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Satuan dasar",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 61.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2247.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 128.0,
+                    "x": 3333.0,
+                    "y": 2247.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Satuan pembelian *",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2777,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Satuan pembelian *",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 128.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 2275.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 84.0,
+                        "x": 3344.0,
+                        "y": 2281.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Kilogram (kg)",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2779,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Pilih satuan",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 84.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 11.0,
+                        "x": 3637.0,
+                        "y": 2281.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "\u2304",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2780,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "\u2304",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 304.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Kilogram (kg)"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2778,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "spaceBetween",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 114,
+                  "mainComponentName": "State=Default",
+                  "name": "Component 5",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2776,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Satuan pembelian",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 141.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 60.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2327.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 124.0,
+                    "x": 3333.0,
+                    "y": 2327.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Satuan penjualan *",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2782,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Satuan penjualan *",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 124.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 326.0,
+                    "x": 3333.0,
+                    "y": 2355.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:18"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 84.0,
+                        "x": 3344.0,
+                        "y": 2361.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Kilogram (kg)",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2784,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Pilih satuan",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 84.0,
+                      "x": 11.0,
+                      "y": 6.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 11.0,
+                        "x": 3637.0,
+                        "y": 2361.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "\u2304",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Regular",
+                      "height": 20.0,
+                      "id": 2785,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "\u2304",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 304.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Kilogram (kg)"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2783,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "spaceBetween",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 114,
+                  "mainComponentName": "State=Default",
+                  "name": "Component 5",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 326.0,
+                  "x": 0.0,
+                  "y": 28.0
+                }
+              ],
+              "clip": true,
+              "height": 60.0,
+              "id": 2781,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "vertical",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Field / Satuan penjualan",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 221.0
+            }
+          ],
+          "clip": true,
+          "cornerRadius": 12.0,
+          "fills": [
+            {
+              "color": "#FFFFFF",
+              "type": "solid"
+            }
+          ],
+          "height": 298.0,
+          "id": 2769,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "min",
+            "crossGap": 10.0,
+            "gap": 20.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "vertical",
+            "padding": [
+              16.0,
+              16.0,
+              16.0,
+              16.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Satuan produk",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "hug"
+          },
+          "strokeAlign": "inside",
+          "strokeWeight": 1.0,
+          "strokes": [
+            {
+              "color": "#DCE3DE",
+              "type": "solid"
+            }
+          ],
+          "type": "FRAME",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 550.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 250.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 2424.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:3",
+            "stroke": "VariableID:17"
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 24.0,
+                "width": 151.0,
+                "x": 3333.0,
+                "y": 2441.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:2"
+              },
+              "characters": "Penggunaan produk",
+              "fills": [
+                {
+                  "color": "#1E2A24",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 16.0,
+              "fontStyle": "Medium",
+              "height": 24.0,
+              "id": 2787,
+              "letterSpacing": "0%",
+              "lineHeight": "24",
+              "name": "Penggunaan produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 151.0,
+              "x": 17.0,
+              "y": 17.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 44.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2485.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 16.0,
+                    "width": 16.0,
+                    "x": 3333.0,
+                    "y": 2485.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:7",
+                    "stroke": "VariableID:7"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 16.0,
+                        "width": 11.0,
+                        "x": 3335.5,
+                        "y": 2485.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:8",
+                        "fontSize": "VariableID:42"
+                      },
+                      "characters": "\u2713",
+                      "fills": [
+                        {
+                          "color": "#FFFFFF",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 12.0,
+                      "fontStyle": "Medium",
+                      "height": 16.0,
+                      "id": 2790,
+                      "letterSpacing": "0%",
+                      "lineHeight": "16",
+                      "name": "\u2713",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 2.5,
+                      "y": 0.0
+                    }
+                  ],
+                  "clip": true,
+                  "cornerRadius": 4.0,
+                  "fills": [
+                    {
+                      "color": "#2F7657",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 16.0,
+                  "id": 2789,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 104,
+                  "mainComponentName": "State=Checked",
+                  "name": "Component 4",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#2F7657",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 16.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 44.0,
+                    "width": 290.0,
+                    "x": 3359.0,
+                    "y": 2485.0
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 79.0,
+                        "x": 3359.0,
+                        "y": 2485.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Dapat dibeli",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Medium",
+                      "height": 20.0,
+                      "id": 2792,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Dapat dibeli",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 79.0,
+                      "x": 0.0,
+                      "y": 0.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 16.0,
+                        "width": 154.0,
+                        "x": 3359.0,
+                        "y": 2509.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:42"
+                      },
+                      "characters": "Untuk transaksi pengadaan.",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 12.0,
+                      "fontStyle": "Regular",
+                      "height": 16.0,
+                      "id": 2793,
+                      "letterSpacing": "0%",
+                      "lineHeight": "16",
+                      "name": "Untuk transaksi pengadaan.",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 154.0,
+                      "x": 0.0,
+                      "y": 24.0
+                    }
+                  ],
+                  "clip": true,
+                  "height": 44.0,
+                  "id": 2791,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "min",
+                    "crossGap": 10.0,
+                    "gap": 4.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "vertical",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "name": "Field content",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "type": "FRAME",
+                  "width": 290.0,
+                  "x": 26.0,
+                  "y": 0.0
+                }
+              ],
+              "clip": true,
+              "height": 44.0,
+              "id": 2788,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 10.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "horizontal",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Dapat dibeli",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 61.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 44.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2549.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 16.0,
+                    "width": 16.0,
+                    "x": 3333.0,
+                    "y": 2549.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:7",
+                    "stroke": "VariableID:7"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 16.0,
+                        "width": 11.0,
+                        "x": 3335.5,
+                        "y": 2549.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:8",
+                        "fontSize": "VariableID:42"
+                      },
+                      "characters": "\u2713",
+                      "fills": [
+                        {
+                          "color": "#FFFFFF",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 12.0,
+                      "fontStyle": "Medium",
+                      "height": 16.0,
+                      "id": 2796,
+                      "letterSpacing": "0%",
+                      "lineHeight": "16",
+                      "name": "\u2713",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 11.0,
+                      "x": 2.5,
+                      "y": 0.0
+                    }
+                  ],
+                  "clip": true,
+                  "cornerRadius": 4.0,
+                  "fills": [
+                    {
+                      "color": "#2F7657",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 16.0,
+                  "id": 2795,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 104,
+                  "mainComponentName": "State=Checked",
+                  "name": "Component 4",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#2F7657",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 16.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 44.0,
+                    "width": 290.0,
+                    "x": 3359.0,
+                    "y": 2549.0
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 79.0,
+                        "x": 3359.0,
+                        "y": 2549.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Dapat dijual",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Medium",
+                      "height": 20.0,
+                      "id": 2798,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Dapat dijual",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 79.0,
+                      "x": 0.0,
+                      "y": 0.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 16.0,
+                        "width": 146.0,
+                        "x": 3359.0,
+                        "y": 2573.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:42"
+                      },
+                      "characters": "Untuk transaksi penjualan.",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 12.0,
+                      "fontStyle": "Regular",
+                      "height": 16.0,
+                      "id": 2799,
+                      "letterSpacing": "0%",
+                      "lineHeight": "16",
+                      "name": "Untuk transaksi penjualan.",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 146.0,
+                      "x": 0.0,
+                      "y": 24.0
+                    }
+                  ],
+                  "clip": true,
+                  "height": 44.0,
+                  "id": 2797,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "min",
+                    "crossGap": 10.0,
+                    "gap": 4.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "vertical",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "name": "Field content",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "type": "FRAME",
+                  "width": 290.0,
+                  "x": 26.0,
+                  "y": 0.0
+                }
+              ],
+              "clip": true,
+              "height": 44.0,
+              "id": 2794,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 10.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "horizontal",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Dapat dijual",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 125.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 44.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2613.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 16.0,
+                    "width": 16.0,
+                    "x": 3333.0,
+                    "y": 2613.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:3",
+                    "stroke": "VariableID:18"
+                  },
+                  "clip": true,
+                  "cornerRadius": 4.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 16.0,
+                  "id": 2801,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 103,
+                  "mainComponentName": "State=Unchecked",
+                  "name": "Component 4",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 16.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 44.0,
+                    "width": 290.0,
+                    "x": 3359.0,
+                    "y": 2613.0
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 112.0,
+                        "x": 3359.0,
+                        "y": 2613.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Dapat diproduksi",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Medium",
+                      "height": 20.0,
+                      "id": 2803,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Dapat diproduksi",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 112.0,
+                      "x": 0.0,
+                      "y": 0.0
+                    },
+                    {
+                      "absoluteBounds": {
+                        "height": 16.0,
+                        "width": 142.0,
+                        "x": 3359.0,
+                        "y": 2637.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:13",
+                        "fontSize": "VariableID:42"
+                      },
+                      "characters": "Untuk proses manufaktur.",
+                      "fills": [
+                        {
+                          "color": "#65746B",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 12.0,
+                      "fontStyle": "Regular",
+                      "height": 16.0,
+                      "id": 2804,
+                      "letterSpacing": "0%",
+                      "lineHeight": "16",
+                      "name": "Untuk proses manufaktur.",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 142.0,
+                      "x": 0.0,
+                      "y": 24.0
+                    }
+                  ],
+                  "clip": true,
+                  "height": 44.0,
+                  "id": 2802,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "min",
+                    "crossGap": 10.0,
+                    "gap": 4.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "min",
+                    "mode": "vertical",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "name": "Field content",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "type": "FRAME",
+                  "width": 290.0,
+                  "x": 26.0,
+                  "y": 0.0
+                }
+              ],
+              "clip": true,
+              "height": 44.0,
+              "id": 2800,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 10.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "horizontal",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Dapat diproduksi",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 189.0
+            }
+          ],
+          "clip": true,
+          "cornerRadius": 12.0,
+          "fills": [
+            {
+              "color": "#FFFFFF",
+              "type": "solid"
+            }
+          ],
+          "height": 250.0,
+          "id": 2786,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "min",
+            "crossGap": 10.0,
+            "gap": 20.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "vertical",
+            "padding": [
+              16.0,
+              16.0,
+              16.0,
+              16.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Penggunaan produk",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "hug"
+          },
+          "strokeAlign": "inside",
+          "strokeWeight": 1.0,
+          "strokes": [
+            {
+              "color": "#DCE3DE",
+              "type": "solid"
+            }
+          ],
+          "type": "FRAME",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 868.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 152.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 2694.0
+          },
+          "boundVariables": {
+            "fill": "VariableID:3",
+            "stroke": "VariableID:17"
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 24.0,
+                "width": 105.0,
+                "x": 3333.0,
+                "y": 2711.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:2"
+              },
+              "characters": "Varian produk",
+              "fills": [
+                {
+                  "color": "#1E2A24",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 16.0,
+              "fontStyle": "Medium",
+              "height": 24.0,
+              "id": 2806,
+              "letterSpacing": "0%",
+              "lineHeight": "24",
+              "name": "Varian produk",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 105.0,
+              "x": 17.0,
+              "y": 17.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 20.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2751.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 16.0,
+                    "width": 16.0,
+                    "x": 3333.0,
+                    "y": 2751.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:3",
+                    "stroke": "VariableID:18"
+                  },
+                  "clip": true,
+                  "cornerRadius": 4.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 16.0,
+                  "id": 2808,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 0.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 103,
+                  "mainComponentName": "State=Unchecked",
+                  "name": "Component 4",
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#7C8C82",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 16.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 20.0,
+                    "width": 99.0,
+                    "x": 3359.0,
+                    "y": 2751.0
+                  },
+                  "boundVariables": {
+                    "fill": "VariableID:2",
+                    "fontSize": "VariableID:41"
+                  },
+                  "characters": "Memiliki varian",
+                  "fills": [
+                    {
+                      "color": "#1E2A24",
+                      "type": "solid"
+                    }
+                  ],
+                  "fontFamily": "Geist",
+                  "fontSize": 14.0,
+                  "fontStyle": "Medium",
+                  "height": 20.0,
+                  "id": 2809,
+                  "letterSpacing": "0%",
+                  "lineHeight": "20",
+                  "name": "Memiliki varian",
+                  "sizing": {
+                    "horizontal": "hug",
+                    "vertical": "hug"
+                  },
+                  "textAlign": "left",
+                  "textAutoResize": "widthAndHeight",
+                  "type": "TEXT",
+                  "width": 99.0,
+                  "x": 26.0,
+                  "y": 0.0
+                }
+              ],
+              "clip": true,
+              "height": 20.0,
+              "id": 2807,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 10.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "horizontal",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Has variants",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 57.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 16.0,
+                "width": 326.0,
+                "x": 3333.0,
+                "y": 2787.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:13",
+                "fontSize": "VariableID:42"
+              },
+              "characters": "Tanpa varian, satu SKU dibuat otomatis sesuai kode produk.",
+              "fills": [
+                {
+                  "color": "#65746B",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 12.0,
+              "fontStyle": "Regular",
+              "height": 16.0,
+              "id": 2810,
+              "letterSpacing": "0%",
+              "lineHeight": "16",
+              "name": "Tanpa varian, satu SKU dibuat otomatis sesuai kode prod",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "height",
+              "type": "TEXT",
+              "width": 326.0,
+              "x": 17.0,
+              "y": 93.0
+            }
+          ],
+          "clip": true,
+          "cornerRadius": 12.0,
+          "fills": [
+            {
+              "color": "#FFFFFF",
+              "type": "solid"
+            }
+          ],
+          "height": 152.0,
+          "id": 2805,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "min",
+            "crossGap": 10.0,
+            "gap": 16.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "vertical",
+            "padding": [
+              16.0,
+              16.0,
+              16.0,
+              16.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Varian produk",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "fixed"
+          },
+          "strokeAlign": "inside",
+          "strokeWeight": 1.0,
+          "strokes": [
+            {
+              "color": "#DCE3DE",
+              "type": "solid"
+            }
+          ],
+          "type": "FRAME",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 1138.0
+        },
+        {
+          "absoluteBounds": {
+            "height": 84.0,
+            "width": 358.0,
+            "x": 3316.0,
+            "y": 2866.0
+          },
+          "children": [
+            {
+              "absoluteBounds": {
+                "height": 16.0,
+                "width": 63.0,
+                "x": 3316.0,
+                "y": 2866.0
+              },
+              "boundVariables": {
+                "fill": "VariableID:13",
+                "fontSize": "VariableID:42"
+              },
+              "characters": "* Wajib diisi",
+              "fills": [
+                {
+                  "color": "#65746B",
+                  "type": "solid"
+                }
+              ],
+              "fontFamily": "Geist",
+              "fontSize": 12.0,
+              "fontStyle": "Regular",
+              "height": 16.0,
+              "id": 2812,
+              "letterSpacing": "0%",
+              "lineHeight": "16",
+              "name": "* Wajib diisi",
+              "sizing": {
+                "horizontal": "hug",
+                "vertical": "hug"
+              },
+              "textAlign": "left",
+              "textAutoResize": "widthAndHeight",
+              "type": "TEXT",
+              "width": 63.0,
+              "x": 0.0,
+              "y": 0.0
+            },
+            {
+              "absoluteBounds": {
+                "height": 36.0,
+                "width": 358.0,
+                "x": 3316.0,
+                "y": 2894.0
+              },
+              "children": [
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 112.0,
+                    "x": 3316.0,
+                    "y": 2894.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:3",
+                    "height": "VariableID:39",
+                    "stroke": "VariableID:17"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 35.0,
+                        "x": 3354.5,
+                        "y": 2900.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:2",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Batal",
+                      "fills": [
+                        {
+                          "color": "#1E2A24",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Medium",
+                      "height": 20.0,
+                      "id": 2815,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Batal",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 35.0,
+                      "x": 38.5,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Batal"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#FFFFFF",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2814,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 6.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 47,
+                  "mainComponentName": "Variant=Outline, State=Default",
+                  "name": "Component 1",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "strokeAlign": "inside",
+                  "strokeWeight": 1.0,
+                  "strokes": [
+                    {
+                      "color": "#DCE3DE",
+                      "type": "solid"
+                    }
+                  ],
+                  "type": "INSTANCE",
+                  "width": 112.0,
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "absoluteBounds": {
+                    "height": 32.0,
+                    "width": 238.0,
+                    "x": 3436.0,
+                    "y": 2894.0
+                  },
+                  "boundVariables": {
+                    "cornerRadius": "VariableID:35",
+                    "fill": "VariableID:7",
+                    "height": "VariableID:39"
+                  },
+                  "children": [
+                    {
+                      "absoluteBounds": {
+                        "height": 20.0,
+                        "width": 100.0,
+                        "x": 3505.0,
+                        "y": 2900.0
+                      },
+                      "boundVariables": {
+                        "fill": "VariableID:8",
+                        "fontSize": "VariableID:41"
+                      },
+                      "characters": "Simpan produk",
+                      "fills": [
+                        {
+                          "color": "#FFFFFF",
+                          "type": "solid"
+                        }
+                      ],
+                      "fontFamily": "Geist",
+                      "fontSize": 14.0,
+                      "fontStyle": "Medium",
+                      "height": 20.0,
+                      "id": 2817,
+                      "letterSpacing": "0%",
+                      "lineHeight": "20",
+                      "name": "Simpan produk",
+                      "sizing": {
+                        "horizontal": "hug",
+                        "vertical": "hug"
+                      },
+                      "textAlign": "left",
+                      "textAutoResize": "widthAndHeight",
+                      "type": "TEXT",
+                      "width": 100.0,
+                      "x": 69.0,
+                      "y": 6.0
+                    }
+                  ],
+                  "clip": true,
+                  "componentProperties": {
+                    "Label": "Simpan produk"
+                  },
+                  "cornerRadius": 10.0,
+                  "fills": [
+                    {
+                      "color": "#2F7657",
+                      "type": "solid"
+                    }
+                  ],
+                  "height": 32.0,
+                  "id": 2816,
+                  "layout": {
+                    "columnTracks": [],
+                    "contentAlign": "auto",
+                    "crossAlign": "center",
+                    "crossGap": 10.0,
+                    "gap": 6.0,
+                    "gridColumns": 2,
+                    "gridRows": 2,
+                    "mainAlign": "center",
+                    "mode": "horizontal",
+                    "padding": [
+                      0.0,
+                      10.0,
+                      0.0,
+                      10.0
+                    ],
+                    "reverseZ": false,
+                    "rowTracks": [],
+                    "strokesIncluded": true,
+                    "wrap": false
+                  },
+                  "mainComponent": 36,
+                  "mainComponentName": "Variant=Primary, State=Default",
+                  "name": "Component 1",
+                  "overrides": [
+                    "size"
+                  ],
+                  "sizing": {
+                    "horizontal": "fixed",
+                    "vertical": "fixed"
+                  },
+                  "type": "INSTANCE",
+                  "width": 238.0,
+                  "x": 120.0,
+                  "y": 0.0
+                }
+              ],
+              "clip": true,
+              "height": 36.0,
+              "id": 2813,
+              "layout": {
+                "columnTracks": [],
+                "contentAlign": "auto",
+                "crossAlign": "min",
+                "crossGap": 10.0,
+                "gap": 8.0,
+                "gridColumns": 2,
+                "gridRows": 2,
+                "mainAlign": "min",
+                "mode": "horizontal",
+                "padding": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "reverseZ": false,
+                "rowTracks": [],
+                "strokesIncluded": true,
+                "wrap": false
+              },
+              "name": "Buttons",
+              "sizing": {
+                "horizontal": "fixed",
+                "vertical": "fixed"
+              },
+              "type": "FRAME",
+              "width": 358.0,
+              "x": 0.0,
+              "y": 28.0
+            }
+          ],
+          "clip": true,
+          "height": 84.0,
+          "id": 2811,
+          "layout": {
+            "columnTracks": [],
+            "contentAlign": "auto",
+            "crossAlign": "min",
+            "crossGap": 10.0,
+            "gap": 12.0,
+            "gridColumns": 2,
+            "gridRows": 2,
+            "mainAlign": "min",
+            "mode": "vertical",
+            "padding": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "reverseZ": false,
+            "rowTracks": [],
+            "strokesIncluded": true,
+            "wrap": false
+          },
+          "name": "Mobile actions",
+          "sizing": {
+            "horizontal": "fixed",
+            "vertical": "fixed"
+          },
+          "type": "FRAME",
+          "width": 358.0,
+          "x": 16.0,
+          "y": 1310.0
+        }
+      ],
+      "clip": true,
+      "height": 1404.0,
+      "id": 2746,
+      "layout": {
+        "columnTracks": [],
+        "contentAlign": "auto",
+        "crossAlign": "min",
+        "crossGap": 10.0,
+        "gap": 20.0,
+        "gridColumns": 2,
+        "gridRows": 2,
+        "mainAlign": "min",
+        "mode": "vertical",
+        "padding": [
+          16.0,
+          16.0,
+          16.0,
+          16.0
+        ],
+        "reverseZ": false,
+        "rowTracks": [],
+        "strokesIncluded": true,
+        "wrap": false
+      },
+      "name": "Mobile form content",
+      "sizing": {
+        "horizontal": "fixed",
+        "vertical": "fixed"
+      },
+      "type": "FRAME",
+      "width": 390.0,
+      "x": 0.0,
+      "y": 56.0
+    }
+  ],
+  "clip": true,
+  "fills": [
+    {
+      "color": "#F8FAF8",
+      "type": "solid"
+    }
+  ],
+  "height": 1460.0,
+  "id": 2738,
+  "layout": {
+    "columnTracks": [],
+    "contentAlign": "auto",
+    "crossAlign": "min",
+    "crossGap": 10.0,
+    "gap": 0.0,
+    "gridColumns": 2,
+    "gridRows": 2,
+    "mainAlign": "min",
+    "mode": "vertical",
+    "padding": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "reverseZ": false,
+    "rowTracks": [],
+    "strokesIncluded": true,
+    "wrap": false
+  },
+  "name": "M02 \u00b7 Product form / Mobile",
+  "sizing": {
+    "horizontal": "fixed",
+    "vertical": "fixed"
+  },
+  "type": "FRAME",
+  "width": 390.0,
+  "x": 3300.0,
+  "y": 1500.0
+}
